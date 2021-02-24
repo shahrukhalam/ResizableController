@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D4097A569879EA4050298D1 /* Pods_ResizableControllerSample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77A5FCC448D560E9DD4D686C /* Pods_ResizableControllerSample.framework */; };
 		420CFFC62552B0A0005168E2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420CFFC52552B0A0005168E2 /* AppDelegate.swift */; };
 		420CFFC82552B0A0005168E2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420CFFC72552B0A0005168E2 /* SceneDelegate.swift */; };
 		420CFFCA2552B0A0005168E2 /* PresentingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420CFFC92552B0A0005168E2 /* PresentingViewController.swift */; };
@@ -15,7 +16,6 @@
 		420CFFD22552B0A2005168E2 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 420CFFD02552B0A2005168E2 /* LaunchScreen.storyboard */; };
 		420CFFE02552B32D005168E2 /* FixedHeightPresentedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420CFFDF2552B32D005168E2 /* FixedHeightPresentedViewController.swift */; };
 		420CFFFF2553BF73005168E2 /* ResizablePresentedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420CFFFE2553BF73005168E2 /* ResizablePresentedViewController.swift */; };
-		42589E21255D752200F109F5 /* ResizableController in Frameworks */ = {isa = PBXBuildFile; productRef = 42589E20255D752200F109F5 /* ResizableController */; };
 		42EFAC8F255AAD82000CB6BC /* ResizableControllerSampleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EFAC8E255AAD82000CB6BC /* ResizableControllerSampleUITests.swift */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +43,9 @@
 		42EFAC8C255AAD82000CB6BC /* ResizableControllerSampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ResizableControllerSampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		42EFAC8E255AAD82000CB6BC /* ResizableControllerSampleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableControllerSampleUITests.swift; sourceTree = "<group>"; };
 		42EFAC90255AAD82000CB6BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		77A5FCC448D560E9DD4D686C /* Pods_ResizableControllerSample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ResizableControllerSample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BABCC862E3650E908673041A /* Pods-ResizableControllerSample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ResizableControllerSample.debug.xcconfig"; path = "Target Support Files/Pods-ResizableControllerSample/Pods-ResizableControllerSample.debug.xcconfig"; sourceTree = "<group>"; };
+		BCF2C9CD3FF457DAC791941D /* Pods-ResizableControllerSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ResizableControllerSample.release.xcconfig"; path = "Target Support Files/Pods-ResizableControllerSample/Pods-ResizableControllerSample.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,7 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				42589E21255D752200F109F5 /* ResizableController in Frameworks */,
+				3D4097A569879EA4050298D1 /* Pods_ResizableControllerSample.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +74,7 @@
 				42EFAC8D255AAD82000CB6BC /* ResizableControllerSampleUITests */,
 				420CFFC32552B0A0005168E2 /* Products */,
 				AFE4132F4C4195658B17B2FA /* Pods */,
+				C16ABE1B927FC77F22D13F20 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -111,8 +115,18 @@
 		AFE4132F4C4195658B17B2FA /* Pods */ = {
 			isa = PBXGroup;
 			children = (
+				BABCC862E3650E908673041A /* Pods-ResizableControllerSample.debug.xcconfig */,
+				BCF2C9CD3FF457DAC791941D /* Pods-ResizableControllerSample.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		C16ABE1B927FC77F22D13F20 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				77A5FCC448D560E9DD4D686C /* Pods_ResizableControllerSample.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -122,18 +136,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 420CFFD62552B0A2005168E2 /* Build configuration list for PBXNativeTarget "ResizableControllerSample" */;
 			buildPhases = (
+				89188CFB64330C51B7FB9FBF /* [CP] Check Pods Manifest.lock */,
 				420CFFBE2552B0A0005168E2 /* Sources */,
 				420CFFBF2552B0A0005168E2 /* Frameworks */,
 				420CFFC02552B0A0005168E2 /* Resources */,
+				623F3C64AE8F1E71BFB815FA /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = ResizableControllerSample;
-			packageProductDependencies = (
-				42589E20255D752200F109F5 /* ResizableController */,
-			);
 			productName = ResizableControllerSample;
 			productReference = 420CFFC22552B0A0005168E2 /* ResizableControllerSample.app */;
 			productType = "com.apple.product-type.application";
@@ -183,9 +196,6 @@
 				Base,
 			);
 			mainGroup = 420CFFB92552B0A0005168E2;
-			packageReferences = (
-				42589E1F255D752200F109F5 /* XCRemoteSwiftPackageReference "ResizableController" */,
-			);
 			productRefGroup = 420CFFC32552B0A0005168E2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -215,6 +225,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		623F3C64AE8F1E71BFB815FA /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ResizableControllerSample/Pods-ResizableControllerSample-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ResizableControllerSample/Pods-ResizableControllerSample-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ResizableControllerSample/Pods-ResizableControllerSample-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		89188CFB64330C51B7FB9FBF /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ResizableControllerSample-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		420CFFBE2552B0A0005168E2 /* Sources */ = {
@@ -385,6 +437,7 @@
 		};
 		420CFFD72552B0A2005168E2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BABCC862E3650E908673041A /* Pods-ResizableControllerSample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -404,6 +457,7 @@
 		};
 		420CFFD82552B0A2005168E2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BCF2C9CD3FF457DAC791941D /* Pods-ResizableControllerSample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -490,25 +544,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		42589E1F255D752200F109F5 /* XCRemoteSwiftPackageReference "ResizableController" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/paytmmoney/ResizableController";
-			requirement = {
-				branch = dev/SwiftPackageManager;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		42589E20255D752200F109F5 /* ResizableController */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 42589E1F255D752200F109F5 /* XCRemoteSwiftPackageReference "ResizableController" */;
-			productName = ResizableController;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 420CFFBA2552B0A0005168E2 /* Project object */;
 }

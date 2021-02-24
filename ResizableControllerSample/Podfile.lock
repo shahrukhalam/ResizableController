@@ -1,0 +1,16 @@
+PODS:
+  - ResizableController (1.0.0)
+
+DEPENDENCIES:
+  - ResizableController (from `../`)
+
+EXTERNAL SOURCES:
+  ResizableController:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  ResizableController: 1ae47784b686d04be59662524f0d2901b7d73f48
+
+PODFILE CHECKSUM: 1f37fa60de91ed84f936d88112ebb48d152ccefd
+
+COCOAPODS: 1.10.1
