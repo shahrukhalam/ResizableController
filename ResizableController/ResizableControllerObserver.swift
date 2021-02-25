@@ -85,7 +85,6 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.08
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
-    private var gestureDidEndedState = true
 
     private lazy var slideIndicativeView: UIView = {
         let view = UIView()
@@ -125,32 +124,75 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         self.estimatedInitialTopOffset = delegate?.initialTopOffset ?? ResizableConstants.maximumTopOffset
     }
 
-
     /// handles user's swipe interactions
     @objc private func handlePan(_ gestureRecognizer: UIGestureRecognizer) {
-
         guard let currentView = panGesture.view,
-            gestureRecognizer == panGesture,
-            let _ = view else { return }
+              gestureRecognizer == panGesture else { return }
 
-        switch panGesture.state {
+        let gestureState = panGesture.state
+        let gestureDirection = panGesture.dragDirection(inView: currentView)
+        let gestureYTranslation = panGesture.translation(in: currentView).y
+
+        // Translates Presented View & Transforms Presenting View
+        let translationValue = translationValueIfAny(gestureState: gestureState,
+                                                     gestureDirection: gestureDirection,
+                                                     gestureYTranslation: gestureYTranslation,
+                                                     isOnFullScreen: isHeightEqualToEstimatedHeight)
+        if let value = translationValue {
+            translate(value: value)
+        }
+
+        // Delegates callback on Full Screen
+        let moveTopOffset = shouldMoveTopOffset(gestureState: gestureState,
+                                                gestureDirection: gestureDirection,
+                                                isOnFullScreen: isHeightEqualToEstimatedHeight)
+        if moveTopOffset {
+            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
+            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
+        }
+    }
+
+    func translationValueIfAny(gestureState: UIGestureRecognizer.State,
+                               gestureDirection: UIPanGestureRecognizer.DraggingState,
+                               gestureYTranslation: CGFloat,
+                               isOnFullScreen: Bool) -> CGFloat? {
+        switch gestureState {
         case .changed:
-            guard gestureDidEndedState else { return }
-            switch panGesture.dragDirection(inView: currentView) {
-            case .upwards where !isHeightEqualToEstimatedHeight:
-                translate(value: estimatedFinalTopOffset)
-            case .downwards where isHeightEqualToEstimatedHeight:
-                translate(value: estimatedInitialTopOffset)
+            switch gestureDirection {
+            case .upwards:
+                if isOnFullScreen {
+                    return nil
+                } else {
+                    return estimatedFinalTopOffset
+                }
             case .downwards:
-                delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
-                delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
+                if isOnFullScreen {
+                    return estimatedInitialTopOffset
+                } else {
+                    return nil
+                }
             default:
-                break
+                return nil
             }
-            gestureDidEndedState = false
-        case .ended, .failed, .cancelled:
-            gestureDidEndedState = true
-        default: break
+        case .possible, .began, .ended, .cancelled, .failed:
+            return nil
+        @unknown default:
+            return nil
+        }
+    }
+
+    func shouldMoveTopOffset(gestureState: UIGestureRecognizer.State,
+                             gestureDirection: UIPanGestureRecognizer.DraggingState,
+                             isOnFullScreen: Bool) -> Bool {
+        switch (gestureState, gestureDirection) {
+        case (.changed, .downwards):
+            guard isOnFullScreen else {
+                return true
+            }
+
+            return false
+        default:
+            return false
         }
     }
 }
@@ -179,8 +221,8 @@ extension ResizableControllerObserver {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let currentView = gestureRecognizer.view,
-            let otherView = otherGestureRecognizer.view else {
-                return false
+              let otherView = otherGestureRecognizer.view else {
+            return false
         }
 
         let isPanGesture = gestureRecognizer == panGesture
