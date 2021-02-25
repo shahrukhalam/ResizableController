@@ -53,9 +53,9 @@ class ResizableAnimatedController: NSObject {
     }()
 
     init?(initialTopOffset: CGFloat,
-         animationDuration: TimeInterval,
-         isPresenting: Bool,
-         estimatedFinalTopOffset: CGFloat) {
+          animationDuration: TimeInterval,
+          isPresenting: Bool,
+          estimatedFinalTopOffset: CGFloat) {
 
         guard initialTopOffset >= ResizableConstants.maximumTopOffset else { return nil }
 
@@ -80,7 +80,7 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
 
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         guard let fromVC = transitionContext.viewController(forKey: .from),
-          let toVC = transitionContext.viewController(forKey: .to) else { return }
+              let toVC = transitionContext.viewController(forKey: .to) else { return }
 
         let containerView = transitionContext.containerView
 
@@ -95,17 +95,23 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             dimmingView.edgesToSuperView()
             containerView.addSubview(toVC.view)
 
-            toVC.setupViewCorners(radius: 12)
-            fromVC.setupViewCorners(radius: 12)
-
             fromVC.beginAppearanceTransition(false, animated: true)
             toVC.beginAppearanceTransition(true, animated: true)
             toVC.modalPresentationCapturesStatusBarAppearance = true
 
             UIView.animate(withDuration: animationDuration, animations: {
-                toVC.view.frame.origin.y = self.initialTopOffset
+                fromVC.setupViewCorners(radius: 12)
                 fromVC.view.layer.transform =  ViewControlerScale.backgroundPopUpScale.transform
+                toVC.view.frame.origin.y = self.initialTopOffset
+                toVC.setupViewCorners(radius: 12)
+
                 self.dimmingView.alpha = 0.2
+                switch fromVC.viewPresentationStyle() {
+                case .custom, .default:
+                    break
+                case .none:
+                    fromVC.view.frame.origin.y = UIScreen.main.bounds.height * 0.04
+                }
             }, completion: { _ in
                 self.presntingViewControlerMinY = fromVC.view.frame.minY
                 fromVC.endAppearanceTransition()
@@ -119,13 +125,14 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             toVC.beginAppearanceTransition(true, animated: true)
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.view.frame.origin.y = UIScreen.main.bounds.maxY
+                toVC.view.layer.transform = ViewControlerScale.reset.transform
+
                 self.dimmingView.alpha = 0
                 switch toVC.viewPresentationStyle() {
                 case .custom, .default:
                     toVC.view.frame.origin.y = self.presntingViewControlerMinY ?? 0
-                    toVC.view.layer.transform = ViewControlerScale.reset.transform
                 case .none:
-                    toVC.view.layer.transform = ViewControlerScale.reset.transform
+                    toVC.view.frame.origin.y = 0
                     toVC.view.roundedCorners(withRadius: 0)
                 }
             }, completion: { _ in
