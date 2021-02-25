@@ -126,18 +126,19 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
 
     /// handles user's swipe interactions
     @objc private func handlePan(_ gestureRecognizer: UIGestureRecognizer) {
-        guard let currentView = panGesture.view,
+        guard let view = view,
+              let currentView = panGesture.view,
               gestureRecognizer == panGesture else { return }
 
         let gestureState = panGesture.state
         let gestureDirection = panGesture.dragDirection(inView: currentView)
         let gestureYTranslation = panGesture.translation(in: currentView).y
+        let viewOriginY = view.frame.origin.y
 
         // Translates Presented View & Transforms Presenting View
         let translationValue = translationValueIfAny(gestureState: gestureState,
-                                                     gestureDirection: gestureDirection,
-                                                     gestureYTranslation: gestureYTranslation,
-                                                     isOnFullScreen: isHeightEqualToEstimatedHeight)
+                                                     viewOriginY: viewOriginY,
+                                                     gestureYTranslation: gestureYTranslation)
         if let value = translationValue {
             translate(value: value)
         }
@@ -147,34 +148,24 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                 gestureDirection: gestureDirection,
                                                 isOnFullScreen: isHeightEqualToEstimatedHeight)
         if moveTopOffset {
-            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
-            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
+//            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
+//            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
         }
     }
 
     func translationValueIfAny(gestureState: UIGestureRecognizer.State,
-                               gestureDirection: UIPanGestureRecognizer.DraggingState,
-                               gestureYTranslation: CGFloat,
-                               isOnFullScreen: Bool) -> CGFloat? {
+                               viewOriginY: CGFloat,
+                               gestureYTranslation: CGFloat) -> CGFloat? {
         switch gestureState {
+        case .possible, .began:
+            return nil
         case .changed:
-            switch gestureDirection {
-            case .upwards:
-                if isOnFullScreen {
-                    return nil
-                } else {
-                    return estimatedFinalTopOffset
-                }
-            case .downwards:
-                if isOnFullScreen {
-                    return estimatedInitialTopOffset
-                } else {
-                    return nil
-                }
-            default:
-                return nil
-            }
-        case .possible, .began, .ended, .cancelled, .failed:
+            let expectedOriginY = viewOriginY + gestureYTranslation
+            let upperBoundary = max(expectedOriginY, estimatedFinalTopOffset)
+            let lowerBoundary = min(upperBoundary, estimatedInitialTopOffset)
+            return lowerBoundary
+        case .ended, .cancelled, .failed:
+            // Find a middle ground
             return nil
         @unknown default:
             return nil
@@ -251,12 +242,12 @@ private extension ResizableControllerObserver {
 
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat) {
-        delegate?.willMoveTopOffset(value: value)
-        UIView.animate(withDuration: animationDuration, animations: {
+//        delegate?.willMoveTopOffset(value: value)
+        UIView.animate(withDuration: 0, animations: {
             self.view?.frame.origin.y = value
-            self.presentingViewTransaltion(transaltion: value)
+//            self.presentingViewTransaltion(transaltion: self.view!.frame.origin.y)
         }, completion: { _ in
-            self.delegate?.didMoveTopOffset(value: value)
+//            self.delegate?.didMoveTopOffset(value: value)
             self.panGesture.setTranslation(.zero, in: self.view)
         })
     }
