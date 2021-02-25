@@ -148,8 +148,8 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                 gestureDirection: gestureDirection,
                                                 isOnFullScreen: isHeightEqualToEstimatedHeight)
         if moveTopOffset {
-//            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
-//            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
+            //            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
+            //            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
         }
     }
 
@@ -158,6 +158,10 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                gestureYTranslation: CGFloat) -> CGFloat? {
         switch gestureState {
         case .possible, .began:
+            if let viewController = presentingVC, presentingVCminY == 0 {
+                presentingVCminY = viewController.view.frame.minY
+            }
+
             return nil
         case .changed:
             let expectedOriginY = viewOriginY + gestureYTranslation
@@ -165,7 +169,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             let lowerBoundary = min(upperBoundary, estimatedInitialTopOffset)
             return lowerBoundary
         case .ended, .cancelled, .failed:
-            // Find a middle ground
+            // Find a Middle Ground
             return nil
         @unknown default:
             return nil
@@ -242,12 +246,12 @@ private extension ResizableControllerObserver {
 
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat) {
-//        delegate?.willMoveTopOffset(value: value)
+        //        delegate?.willMoveTopOffset(value: value)
         UIView.animate(withDuration: 0, animations: {
             self.view?.frame.origin.y = value
-//            self.presentingViewTransaltion(transaltion: self.view!.frame.origin.y)
+            self.presentingViewTransaltion(transaltion: value)
         }, completion: { _ in
-//            self.delegate?.didMoveTopOffset(value: value)
+            //            self.delegate?.didMoveTopOffset(value: value)
             self.panGesture.setTranslation(.zero, in: self.view)
         })
     }
@@ -267,10 +271,31 @@ private extension ResizableControllerObserver {
         }
     }
 
+    func presentingViewTransaltionForNone(transaltion: CGFloat) {
+        guard let viewController = presentingVC else { return }
+
+        let presentingViewYMin = presentingVCminY // estimatedFinalTopOffset - 15
+        let presentingViewYMax = estimatedFinalTopOffset - 8 // ?
+        let presentedViewYMin = estimatedFinalTopOffset
+        let presentedViewYMax = estimatedInitialTopOffset
+        let currentPresentedViewY = transaltion
+        let percentage = (currentPresentedViewY - presentedViewYMin)/(presentedViewYMax - presentedViewYMin)
+        let y = presentingViewYMax - (presentingViewYMax - presentingViewYMin) * percentage
+
+        let presentingViewTMin: CGFloat = 0.86
+        let presentingViewTMax: CGFloat = 0.92
+        let transformXY = presentingViewTMin + (presentingViewTMax - presentingViewTMin) * percentage
+        let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
+
+//        viewController.view.frame.origin.y = y
+        viewController.view.layer.transform = transform
+        return
+    }
+
     /// Scales presenting view controller as per translation
     func presentingViewTransaltion(transaltion: CGFloat) {
         guard let viewController = presentingVC else { return }
-        self.viewPosition.toggle(on: self.slideIndicativeView)
+//        self.viewPosition.toggle(on: self.slideIndicativeView)
 
         switch viewController.viewPresentationStyle() {
 
