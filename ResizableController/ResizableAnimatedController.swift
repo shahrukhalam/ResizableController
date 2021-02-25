@@ -21,9 +21,9 @@ enum ViewControlerScale {
     var transform: CATransform3D {
         switch self {
         case .backgroundPopUpScale:
-           return CATransform3DMakeScale(0.92, 0.92, 1)
+            return CATransform3DMakeScale(0.95, 1, 1)
         case .backgroundFullScreenScale:
-            return CATransform3DMakeScale(0.86, 0.86, 1)
+            return CATransform3DMakeScale(0.92, 1, 1)
         case .reset:
             return CATransform3DMakeScale(1, 1, 1)
         }
@@ -35,10 +35,10 @@ class ResizableAnimatedController: NSObject {
 
     let initialTopOffset: CGFloat
     var estimatedFinalTopOffset: CGFloat
+    private let presentingViewOriginY = UIScreen.main.bounds.height * 0.04
     let animationDuration: TimeInterval
     var isPresenting: Bool
 
-    private var presntingViewControlerMinY: CGFloat?
     private weak var viewToBeDismissed: UIViewController?
     private let tapGesture = UITapGestureRecognizer()
 
@@ -105,9 +105,9 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             UIView.animate(withDuration: animationDuration, animations: {
                 toVC.view.frame.origin.y = self.initialTopOffset
                 fromVC.view.layer.transform =  ViewControlerScale.backgroundPopUpScale.transform
+                fromVC.view.frame.origin.y = presentingViewOriginY
                 self.dimmingView.alpha = 0.2
             }, completion: { _ in
-                self.presntingViewControlerMinY = fromVC.view.frame.minY
                 fromVC.endAppearanceTransition()
                 toVC.endAppearanceTransition()
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
@@ -120,14 +120,9 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.view.frame.origin.y = UIScreen.main.bounds.maxY
                 self.dimmingView.alpha = 0
-                switch toVC.viewPresentationStyle() {
-                case .custom, .default:
-                    toVC.view.frame.origin.y = self.presntingViewControlerMinY ?? 0
-                    toVC.view.layer.transform = ViewControlerScale.reset.transform
-                case .none:
-                    toVC.view.layer.transform = ViewControlerScale.reset.transform
-                    toVC.view.roundedCorners(withRadius: 0)
-                }
+                toVC.view.frame.origin.y = 0
+                toVC.view.layer.transform = ViewControlerScale.reset.transform
+                toVC.view.roundedCorners(withRadius: 0)
             }, completion: { _ in
                 fromVC.endAppearanceTransition()
                 toVC.endAppearanceTransition()

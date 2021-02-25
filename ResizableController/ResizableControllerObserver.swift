@@ -87,8 +87,8 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var presentingVCminY: CGFloat = 0
     private let screenTopOffset = UIScreen.main.bounds.height
     private let presentingViewPeek: CGFloat = 15
-    private let minTransformXY: CGFloat = 0.86
-    private let maxTransformXY: CGFloat = 0.92
+    private let minTransformXY: CGFloat = 0.92
+    private let maxTransformXY: CGFloat = 0.95
     private let settlingDuration: TimeInterval = 0.2
 
     private lazy var slideIndicativeView: UIView = {
@@ -146,14 +146,14 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                      viewOriginY: viewOriginY,
                                                      gestureYTranslation: gestureYTranslation)
         if let value = translationValue {
-            translate(value: value)
+            translate(value: value, animationDuration: 0)
         }
-
+        
         // Settle or Dismiss Presented ViewController
         let settlingValue = settlingValueIfAny(gestureState: gestureState,
                                                viewOriginY: viewOriginY)
         if let value = settlingValue {
-            settle(value: value)
+            translate(value: value, animationDuration: settlingDuration)
         }
     }
 
@@ -260,24 +260,10 @@ private extension ResizableControllerObserver {
     }
 
     /// performs resizable transformation for presented and presenting view controllers
-    func translate(value: CGFloat) {
+    func translate(value: CGFloat, animationDuration: TimeInterval) {
         delegate?.willMoveTopOffset(value: value)
 
-        UIView.animate(withDuration: 0, animations: {
-            self.view?.frame.origin.y = value
-            self.presentingTranslation(view: self.presentingVC?.view,
-                                       minY: self.presentingVCminY,
-                                       transaltion: value)
-        }, completion: { _ in
-            self.panGesture.setTranslation(.zero, in: self.view)
-            self.delegate?.didMoveTopOffset(value: value)
-        })
-    }
-
-    func settle(value: CGFloat) {
-        delegate?.willMoveTopOffset(value: value)
-
-        UIView.animate(withDuration: settlingDuration, animations: {
+        UIView.animate(withDuration: animationDuration, animations: {
             self.view?.frame.origin.y = value
             self.presentingTranslation(view: self.presentingVC?.view,
                                        minY: self.presentingVCminY,
@@ -307,21 +293,27 @@ private extension ResizableControllerObserver {
     func presentingTranslation(view: UIView?, minY: CGFloat, transaltion: CGFloat) {
         guard let view = view else { return }
 
+        let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
+        view.frame.origin.y = values.y
+        view.layer.transform = values.t
+    }
+
+    func presentingTranslationValues(minY: CGFloat,
+                                     transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
         let presentingViewYMin = minY
         let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
         let presentedViewYMin = estimatedFinalTopOffset
         let presentedViewYMax = estimatedInitialTopOffset
         let currentPresentedViewY = transaltion
-        let percentage = (currentPresentedViewY - presentedViewYMin)/(presentedViewYMax - presentedViewYMin)
-        let y = presentingViewYMax - (presentingViewYMax - presentingViewYMin) * percentage
+        let percentage = (presentedViewYMax - currentPresentedViewY)/(presentedViewYMax - presentedViewYMin)
+        let y = presentingViewYMin + (presentingViewYMax - presentingViewYMin) * percentage
 
         let presentingViewTMin = minTransformXY
         let presentingViewTMax = maxTransformXY
-        let transformXY = presentingViewTMin + (presentingViewTMax - presentingViewTMin) * percentage
-        let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
+        let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
+        let transform = CATransform3DMakeScale(transformXY, 1, 1)
 
-        view.frame.origin.y = y
-        view.layer.transform = transform
+        return (y, transform)
     }
 
     /// adds slider bar animation
