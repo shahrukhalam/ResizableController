@@ -85,6 +85,9 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.08
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
+    private let presentingViewPeek: CGFloat = 15
+    private let minTransformXY: CGFloat = 0.86
+    private let maxTransformXY: CGFloat = 0.92
 
     private lazy var slideIndicativeView: UIView = {
         let view = UIView()
@@ -135,6 +138,8 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         let gestureYTranslation = panGesture.translation(in: currentView).y
         let viewOriginY = view.frame.origin.y
 
+        setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: gestureState)
+
         // Translates Presented View & Transforms Presenting View
         let translationValue = translationValueIfAny(gestureState: gestureState,
                                                      viewOriginY: viewOriginY,
@@ -153,15 +158,22 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         }
     }
 
+    func setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: UIGestureRecognizer.State) {
+        switch gestureState {
+        case .began:
+            if let viewController = presentingVC, presentingVCminY == 0 {
+                presentingVCminY = viewController.view.frame.minY
+            }
+        default:
+            break
+        }
+    }
+
     func translationValueIfAny(gestureState: UIGestureRecognizer.State,
                                viewOriginY: CGFloat,
                                gestureYTranslation: CGFloat) -> CGFloat? {
         switch gestureState {
         case .possible, .began:
-            if let viewController = presentingVC, presentingVCminY == 0 {
-                presentingVCminY = viewController.view.frame.minY
-            }
-
             return nil
         case .changed:
             let expectedOriginY = viewOriginY + gestureYTranslation
@@ -246,12 +258,14 @@ private extension ResizableControllerObserver {
 
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat) {
-        //        delegate?.willMoveTopOffset(value: value)
+        delegate?.willMoveTopOffset(value: value)
         UIView.animate(withDuration: 0, animations: {
             self.view?.frame.origin.y = value
-            self.presentingViewTransaltion(transaltion: value)
+            self.presentingTranslation(view: self.presentingVC?.view,
+                                       minY: self.presentingVCminY,
+                                       transaltion: value)
         }, completion: { _ in
-            //            self.delegate?.didMoveTopOffset(value: value)
+            self.delegate?.didMoveTopOffset(value: value)
             self.panGesture.setTranslation(.zero, in: self.view)
         })
     }
@@ -271,54 +285,25 @@ private extension ResizableControllerObserver {
         }
     }
 
-    func presentingViewTransaltionForNone(transaltion: CGFloat) {
-        guard let viewController = presentingVC else { return }
+    /// Scales presenting view controller as per translation
+    func presentingTranslation(view: UIView?, minY: CGFloat, transaltion: CGFloat) {
+        guard let view = view else { return }
 
-        let presentingViewYMin = presentingVCminY // estimatedFinalTopOffset - 15
-        let presentingViewYMax = estimatedFinalTopOffset - 8 // ?
+        let presentingViewYMin = minY
+        let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
         let presentedViewYMin = estimatedFinalTopOffset
         let presentedViewYMax = estimatedInitialTopOffset
         let currentPresentedViewY = transaltion
         let percentage = (currentPresentedViewY - presentedViewYMin)/(presentedViewYMax - presentedViewYMin)
         let y = presentingViewYMax - (presentingViewYMax - presentingViewYMin) * percentage
 
-        let presentingViewTMin: CGFloat = 0.86
-        let presentingViewTMax: CGFloat = 0.92
+        let presentingViewTMin = minTransformXY
+        let presentingViewTMax = maxTransformXY
         let transformXY = presentingViewTMin + (presentingViewTMax - presentingViewTMin) * percentage
         let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
 
-//        viewController.view.frame.origin.y = y
-        viewController.view.layer.transform = transform
-        return
-    }
-
-    /// Scales presenting view controller as per translation
-    func presentingViewTransaltion(transaltion: CGFloat) {
-        guard let viewController = presentingVC else { return }
-//        self.viewPosition.toggle(on: self.slideIndicativeView)
-
-        switch viewController.viewPresentationStyle() {
-
-        case .custom where estimatedFinalTopOffset == transaltion:
-            presentingVCminY = viewController.view.frame.minY
-            viewController.view.frame.origin.y = estimatedFinalTopOffset - 15
-        case .custom where estimatedInitialTopOffset == transaltion:
-            viewController.view.layer.transform = ViewControlerScale.backgroundPopUpScale.transform
-            viewController.view.frame.origin.y = presentingVCminY
-
-        case .default where estimatedFinalTopOffset == transaltion:
-            presentingVCminY = viewController.view.frame.minY
-            presentingVC?.view.frame.origin.y = .zero
-        case .default where transaltion == estimatedInitialTopOffset:
-            presentingVC?.view.frame.origin.y = presentingVCminY
-
-        case .none where estimatedFinalTopOffset == transaltion:
-            viewController.view.layer.transform = ViewControlerScale.backgroundFullScreenScale.transform
-        case .none where estimatedInitialTopOffset == transaltion:
-            viewController.view.layer.transform = ViewControlerScale.backgroundPopUpScale.transform
-        default:
-            viewController.view.layer.transform = ViewControlerScale.reset.transform
-        }
+        view.frame.origin.y = y
+        view.layer.transform = transform
     }
 
     /// adds slider bar animation
