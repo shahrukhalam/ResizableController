@@ -42,8 +42,10 @@ extension ResizableControllerPositionHandler {
 
 public extension ResizableControllerPositionHandler {
 
-    func willMoveTopOffset(value: CGFloat) {
-        if initialTopOffset == finalTopOffset || value > initialTopOffset {
+    func willMoveTopOffset(value: CGFloat) {  }
+
+    func didMoveTopOffset(value: CGFloat) {
+        if value == UIScreen.main.bounds.height {
             self.dismiss(animated: true, completion: nil)
         }
     }
@@ -63,8 +65,6 @@ public extension ResizableControllerPositionHandler {
     var shouldShowSlideUpIndication: Bool {
         return initialTopOffset != finalTopOffset
     }
-
-    func didMoveTopOffset(value: CGFloat) {}
 }
 
 
@@ -85,9 +85,11 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.08
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
+    private let screenTopOffset = UIScreen.main.bounds.height
     private let presentingViewPeek: CGFloat = 15
     private let minTransformXY: CGFloat = 0.86
     private let maxTransformXY: CGFloat = 0.92
+    private let settlingDuration: TimeInterval = 0.2
 
     private lazy var slideIndicativeView: UIView = {
         let view = UIView()
@@ -134,7 +136,6 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
               gestureRecognizer == panGesture else { return }
 
         let gestureState = panGesture.state
-        let gestureDirection = panGesture.dragDirection(inView: currentView)
         let gestureYTranslation = panGesture.translation(in: currentView).y
         let viewOriginY = view.frame.origin.y
 
@@ -148,13 +149,11 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             translate(value: value)
         }
 
-        // Delegates callback on Full Screen
-        let moveTopOffset = shouldMoveTopOffset(gestureState: gestureState,
-                                                gestureDirection: gestureDirection,
-                                                isOnFullScreen: isHeightEqualToEstimatedHeight)
-        if moveTopOffset {
-            //            delegate?.willMoveTopOffset(value: UIScreen.main.bounds.maxY)
-            //            delegate?.didMoveTopOffset(value: UIScreen.main.bounds.maxY)
+        // Settle or Dismiss Presented ViewController
+        let settlingValue = settlingValueIfAny(gestureState: gestureState,
+                                               viewOriginY: viewOriginY)
+        if let value = settlingValue {
+            settle(value: value)
         }
     }
 
@@ -178,28 +177,32 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         case .changed:
             let expectedOriginY = viewOriginY + gestureYTranslation
             let upperBoundary = max(expectedOriginY, estimatedFinalTopOffset)
-            let lowerBoundary = min(upperBoundary, estimatedInitialTopOffset)
+            let lowerBoundary = min(upperBoundary, screenTopOffset)
             return lowerBoundary
         case .ended, .cancelled, .failed:
-            // Find a Middle Ground
             return nil
         @unknown default:
             return nil
         }
     }
 
-    func shouldMoveTopOffset(gestureState: UIGestureRecognizer.State,
-                             gestureDirection: UIPanGestureRecognizer.DraggingState,
-                             isOnFullScreen: Bool) -> Bool {
-        switch (gestureState, gestureDirection) {
-        case (.changed, .downwards):
-            guard isOnFullScreen else {
-                return true
+    func settlingValueIfAny(gestureState: UIGestureRecognizer.State,
+                            viewOriginY: CGFloat) -> CGFloat? {
+        switch gestureState {
+        case .possible, .began, .changed:
+            return nil
+        case .ended, .cancelled, .failed:
+            let upperHalf = (estimatedFinalTopOffset + estimatedInitialTopOffset)/2
+            let lowerHalf = (estimatedInitialTopOffset + screenTopOffset)/2
+            if viewOriginY <= upperHalf {
+                return estimatedFinalTopOffset
+            } else if (viewOriginY > upperHalf) && (viewOriginY <= lowerHalf) {
+                return estimatedInitialTopOffset
+            } else {
+                return screenTopOffset
             }
-
-            return false
-        default:
-            return false
+        @unknown default:
+            return nil
         }
     }
 }
@@ -259,14 +262,29 @@ private extension ResizableControllerObserver {
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat) {
         delegate?.willMoveTopOffset(value: value)
+
         UIView.animate(withDuration: 0, animations: {
             self.view?.frame.origin.y = value
             self.presentingTranslation(view: self.presentingVC?.view,
                                        minY: self.presentingVCminY,
                                        transaltion: value)
         }, completion: { _ in
-            self.delegate?.didMoveTopOffset(value: value)
             self.panGesture.setTranslation(.zero, in: self.view)
+            self.delegate?.didMoveTopOffset(value: value)
+        })
+    }
+
+    func settle(value: CGFloat) {
+        delegate?.willMoveTopOffset(value: value)
+
+        UIView.animate(withDuration: settlingDuration, animations: {
+            self.view?.frame.origin.y = value
+            self.presentingTranslation(view: self.presentingVC?.view,
+                                       minY: self.presentingVCminY,
+                                       transaltion: value)
+        }, completion: { _ in
+            self.panGesture.setTranslation(.zero, in: self.view)
+            self.delegate?.didMoveTopOffset(value: value)
         })
     }
 
