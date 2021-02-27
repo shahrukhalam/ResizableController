@@ -12,6 +12,7 @@ class ResizablePresentedViewController: UIViewController {
 
     @IBOutlet weak var swipeLabel: UILabel!
     private let infoButton = UIButton(type: .infoLight)
+    var initialTopOffset: CGFloat = 200
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,16 +33,18 @@ class ResizablePresentedViewController: UIViewController {
     }
 
     @objc private func infoButtonTapped() {
-        let viewController = PinkPresentedViewController()
-        self.present(viewController)
+        let viewController = UIStoryboard(name: "Main", bundle: nil)
+            .instantiateViewController(identifier: "ResizablePresentedViewController")
+        guard let resizableViewController = viewController as? ResizablePresentedViewController else {
+            return
+        }
+
+        resizableViewController.initialTopOffset = 500
+        self.present(resizableViewController)
     }
 }
 
 extension ResizablePresentedViewController: ResizableControllerPositionHandler {
-    var initialTopOffset: CGFloat {
-        200
-    }
-
     func didMoveTopOffset(value: CGFloat) {
         if value == initialTopOffset {
             self.swipeLabel.text = "Swipe up to full size"
@@ -54,17 +57,5 @@ extension ResizablePresentedViewController: ResizableControllerPositionHandler {
         if value >= UIScreen.main.bounds.height {
             self.dismiss(animated: true, completion: nil)
         }
-    }
-}
-
-class PinkPresentedViewController: UIViewController, ResizableControllerPositionHandler {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        view.backgroundColor = .systemPink
-    }
-
-    var initialTopOffset: CGFloat {
-        500
     }
 }

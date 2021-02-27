@@ -175,8 +175,10 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             switch value {
             case estimatedFinalTopOffset:
                 viewController.mode = .fullScreen
-            case estimatedInitialTopOffset, screenTopOffset:
+            case estimatedInitialTopOffset:
                 viewController.mode = .popUp
+            case screenTopOffset:
+                break
             default:
                 assertionFailure("Unexpected Settling Value")
             }

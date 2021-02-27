@@ -17,10 +17,8 @@ class PresentingViewController: UIViewController {
     }
 
     @IBAction func onTapOfCustomHeightController(_ sender: Any) {
-
         let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(identifier: "ResizablePresentedViewController") as ResizablePresentedViewController
         self.present(viewController)
-//        self.present(viewController, animated: true, completion: nil)
     }
 
     @IBAction func onTapOfFixedHeightController(_ sender: Any) {
