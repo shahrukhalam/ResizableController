@@ -304,10 +304,10 @@ private extension ResizableControllerObserver {
         let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
 //        view.frame.origin.y = values.y
         view.layer.transform = values.t
+        view.alpha = values.alpha
     }
 
-    func presentingTranslationValues(minY: CGFloat,
-                                     transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
+    func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D, alpha: CGFloat) {
         let presentingViewYMin = minY
         let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
         let presentedViewYMin = estimatedFinalTopOffset
@@ -322,7 +322,11 @@ private extension ResizableControllerObserver {
         let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
         let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
 
-        return (y, transform)
+        let alphaMin: CGFloat = 0.8
+        let alphaMax: CGFloat = 1
+        let alpha = alphaMax - (alphaMax - alphaMin) * percentage
+
+        return (y, transform, alpha)
     }
 
     /// adds slider bar animation

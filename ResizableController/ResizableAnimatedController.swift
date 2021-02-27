@@ -40,6 +40,8 @@ class ResizableAnimatedController: NSObject {
     var isPresenting: Bool
 
     private var presntingViewControlerMinY: CGFloat?
+    private var presntingViewOriginalAlpha: CGFloat = 1
+
     private weak var viewToBeDismissed: UIViewController?
     private let tapGesture = UITapGestureRecognizer()
 
@@ -101,6 +103,9 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             toVC.beginAppearanceTransition(true, animated: true)
             toVC.modalPresentationCapturesStatusBarAppearance = true
 
+            presntingViewControlerMinY = fromVC.view.frame.minY
+            presntingViewOriginalAlpha = fromVC.view.alpha
+
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.setupViewCorners(radius: 10)
                 let isPresentedFullScreen = self.initialTopOffset == self.estimatedFinalTopOffset
@@ -108,9 +113,10 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
                 fromVC.view.layer.transform = transform
                 toVC.view.frame.origin.y = self.initialTopOffset
                 toVC.setupViewCorners(radius: 10)
-                self.dimmingView.alpha = 0.2
+                if isPresentedFullScreen {
+                    fromVC.view.alpha = 0.8
+                }
             }, completion: { _ in
-                self.presntingViewControlerMinY = fromVC.view.frame.minY
                 fromVC.endAppearanceTransition()
                 toVC.endAppearanceTransition()
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
@@ -123,8 +129,8 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.view.frame.origin.y = UIScreen.main.bounds.maxY
                 toVC.view.layer.transform = ViewControlerScale.reset.transform
+                toVC.view.alpha = self.presntingViewOriginalAlpha
 
-                self.dimmingView.alpha = 0
                 switch toVC.viewPresentationStyle() {
                 case .custom, .default:
                     toVC.view.frame.origin.y = self.presntingViewControlerMinY ?? 0
@@ -154,7 +160,7 @@ extension UIViewController {
     }
 
     func setupViewCorners(radius: CGFloat) {
-        view.roundedCorners(withRadius: 12)
+        view.roundedCorners(withRadius: 10)
         view.clipsToBounds = true
     }
 }

@@ -49,6 +49,10 @@ extension ResizablePresentedViewController: ResizableControllerPositionHandler {
         if value == finalTopOffset {
             self.swipeLabel.text = "Swipe down to half screen"
         }
+
+        if value >= UIScreen.main.bounds.height {
+            self.dismiss(animated: true, completion: nil)
+        }
     }
 }
 
