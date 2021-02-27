@@ -45,7 +45,6 @@ class ResizableAnimatedController: NSObject {
     var isPresenting: Bool
 
     private var presntingViewControlerMinY: CGFloat?
-    private var mode: PresentingMode = .fullScreen
 
     private weak var viewToBeDismissed: UIViewController?
     private let tapGesture = UITapGestureRecognizer()
@@ -110,7 +109,7 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
 
             presntingViewControlerMinY = fromVC.view.frame.minY
             let isFullScreen = self.initialTopOffset == self.estimatedFinalTopOffset
-            mode = isFullScreen ? .fullScreen : .popUp
+            let mode: PresentingMode = isFullScreen ? .fullScreen : .popUp
             (toVC as? ResizableContainerViewController)?.mode = mode
             let scale: ViewControlerScale = isFullScreen ? .backgroundFullScreenScale : .backgroundPopUpScale
             let transform = scale.transform
@@ -128,8 +127,6 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             })
         } else {
             containerView.addSubview(fromVC.view)
-
-            (toVC as? ResizableContainerViewController)?.mode = mode
 
             fromVC.beginAppearanceTransition(false, animated: true)
             toVC.beginAppearanceTransition(true, animated: true)

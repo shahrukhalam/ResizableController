@@ -29,7 +29,9 @@ class ResizableTransitioningController: NSObject, UIViewControllerTransitioningD
             return nil
         }
 
-        gestureRecoganiser = ResizableControllerObserver(in: presented.view, duration: animationDuration, delegate: presentedChildVc)
+        gestureRecoganiser = ResizableControllerObserver(in: presented,
+                                                         duration: animationDuration,
+                                                         delegate: presentedChildVc)
         gestureRecoganiser.presentingVC = presenting
         gestureRecoganiser.estimatedInitialTopOffset = presentedChildVc.initialTopOffset
 

@@ -76,6 +76,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     private let panGesture = UIPanGestureRecognizer()
     private var viewPosition: SliderPosition = .present
 
+    private weak var presentedViewController: UIViewController?
     private weak var view: UIView?
     private let animationDuration: TimeInterval
 
@@ -105,8 +106,11 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         return view
     }()
 
-    init(in view: UIView, duration: TimeInterval = 0.3, delegate: ResizableControllerPositionHandler? = nil) {
-        self.view = view
+    init(in presentedViewController: UIViewController,
+         duration: TimeInterval = 0.3,
+         delegate: ResizableControllerPositionHandler? = nil) {
+        self.presentedViewController = presentedViewController
+        self.view = presentedViewController.view
         self.animationDuration = duration
         super.init()
 
@@ -163,6 +167,19 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                viewOriginY: viewOriginY)
         if let value = settlingValue {
             translate(value: value, animationDuration: settlingDuration)
+
+            guard let viewController = presentedViewController as? ResizableContainerViewController else {
+                return
+            }
+
+            switch value {
+            case estimatedFinalTopOffset:
+                viewController.mode = .fullScreen
+            case estimatedInitialTopOffset, screenTopOffset:
+                viewController.mode = .popUp
+            default:
+                assertionFailure("Unexpected Settling Value")
+            }
         }
     }
 
