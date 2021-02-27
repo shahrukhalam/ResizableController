@@ -12,6 +12,11 @@ enum PresentingViewType {
     case custom, `default`, none
 }
 
+/// Manages States of Custom Presentation
+enum PresentingMode {
+    case popUp, fullScreen
+}
+
 /// Manages scaling for presenting view controller
 enum ViewControlerScale {
     case backgroundPopUpScale
@@ -40,6 +45,7 @@ class ResizableAnimatedController: NSObject {
     var isPresenting: Bool
 
     private var presntingViewControlerMinY: CGFloat?
+    private var mode: PresentingMode = .fullScreen
 
     private weak var viewToBeDismissed: UIViewController?
     private let tapGesture = UITapGestureRecognizer()
@@ -103,11 +109,14 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             toVC.modalPresentationCapturesStatusBarAppearance = true
 
             presntingViewControlerMinY = fromVC.view.frame.minY
+            let isFullScreen = self.initialTopOffset == self.estimatedFinalTopOffset
+            mode = isFullScreen ? .fullScreen : .popUp
+            (toVC as? ResizableContainerViewController)?.mode = mode
+            let scale: ViewControlerScale = isFullScreen ? .backgroundFullScreenScale : .backgroundPopUpScale
+            let transform = scale.transform
 
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.setupViewCorners(radius: 10)
-                let isPresentedFullScreen = self.initialTopOffset == self.estimatedFinalTopOffset
-                let transform = isPresentedFullScreen ? ViewControlerScale.backgroundFullScreenScale.transform : ViewControlerScale.backgroundPopUpScale.transform
                 fromVC.view.layer.transform = transform
                 toVC.view.frame.origin.y = self.initialTopOffset
                 toVC.setupViewCorners(radius: 10)
@@ -119,6 +128,8 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             })
         } else {
             containerView.addSubview(fromVC.view)
+
+            (toVC as? ResizableContainerViewController)?.mode = mode
 
             fromVC.beginAppearanceTransition(false, animated: true)
             toVC.beginAppearanceTransition(true, animated: true)

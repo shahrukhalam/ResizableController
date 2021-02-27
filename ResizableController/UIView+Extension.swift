@@ -45,15 +45,16 @@ public extension UIViewController {
                  animationDuration: TimeInterval = 0.3,
                  completion: (() -> Void)? = nil) {
         let viewController = ResizableContainerViewController(animationDuration: animationDuration,
-                                                           childVC: viewControllerToPresent)
+                                                              childVC: viewControllerToPresent)
         self.present(viewController, animated: true, completion: completion)
     }
 }
 
-
 /// Helper ViewController to layout Resizable Controller Style.
 class ResizableContainerViewController: UIViewController {
+    var mode: PresentingMode = .fullScreen
     private var transitionAnimator: UIViewControllerTransitioningDelegate?
+
     init(animationDuration: TimeInterval,
          childVC: UIViewController) {
         self.transitionAnimator = ResizableTransitioningController(animationDuration: animationDuration)
@@ -70,6 +71,7 @@ class ResizableContainerViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
     private func setup() {
         modalPresentationStyle = .custom
         transitioningDelegate = transitionAnimator

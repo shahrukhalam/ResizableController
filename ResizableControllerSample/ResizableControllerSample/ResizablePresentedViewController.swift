@@ -39,7 +39,7 @@ class ResizablePresentedViewController: UIViewController {
 
 extension ResizablePresentedViewController: ResizableControllerPositionHandler {
     var initialTopOffset: CGFloat {
-        500
+        200
     }
 
     func didMoveTopOffset(value: CGFloat) {

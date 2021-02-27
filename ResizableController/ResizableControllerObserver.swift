@@ -86,6 +86,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
     private let screenTopOffset = UIScreen.main.bounds.height
+    private let middleTopOffset = UIScreen.main.bounds.height * (1 + 0.06) * 0.5
     private let presentingViewPeek: CGFloat = 10
     private lazy var minTransformXY: CGFloat = {
         let finalTopOffset = UIScreen.main.bounds.height * 0.06
@@ -169,6 +170,9 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         switch gestureState {
         case .began:
             if let viewController = presentingVC, presentingVCminY == 0 {
+//                let presentingView: UIView = viewController.view
+//                let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
+//                presentingVCminY = convertedRectWRTWindow.minY
                 presentingVCminY = viewController.view.frame.minY
             }
         default:
@@ -303,25 +307,40 @@ private extension ResizableControllerObserver {
             return
         }
 
+        guard viewController.viewPresentationStyle() != .default else {
+            return
+        }
+
         let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
-//        view.frame.origin.y = values.y
         viewController.view.layer.transform = values.t
 
-        var presentingViewController = viewController.presentingViewController
-        while presentingViewController != nil {
-            presentingViewController?.view.layer.transform = values.t
-            presentingViewController = presentingViewController?.presentingViewController
+        guard let resizableContainerViewController = viewController as? ResizableContainerViewController,
+              resizableContainerViewController.viewPresentationStyle() == .custom else {
+            return
+        }
+
+        switch resizableContainerViewController.mode {
+        case .popUp:
+            var presentingViewController = resizableContainerViewController.presentingViewController
+            while presentingViewController != nil {
+                presentingViewController?.view.layer.transform = values.t
+                presentingViewController = presentingViewController?.presentingViewController
+            }
+        case .fullScreen:
+            resizableContainerViewController.view.frame.origin.y = values.y
         }
     }
 
-    func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D, alpha: CGFloat) {
+    func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
         let presentingViewYMin = minY
         let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
+
         let presentedViewYMin = estimatedFinalTopOffset
         let isPresentedFullScreen = estimatedInitialTopOffset == estimatedFinalTopOffset
-        let presentedViewYMax = isPresentedFullScreen ? screenTopOffset : estimatedInitialTopOffset
+        let presentedViewYMax = isPresentedFullScreen ? middleTopOffset : estimatedInitialTopOffset
         let currentPresentedViewY = min(transaltion, presentedViewYMax)
         let percentage = (presentedViewYMax - currentPresentedViewY)/(presentedViewYMax - presentedViewYMin)
+
         let y = presentingViewYMin + (presentingViewYMax - presentingViewYMin) * percentage
 
         let presentingViewTMin = minTransformXY
@@ -329,11 +348,7 @@ private extension ResizableControllerObserver {
         let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
         let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
 
-        let alphaMin: CGFloat = 0.6
-        let alphaMax: CGFloat = 0.75
-        let alpha = alphaMax - (alphaMax - alphaMin) * percentage
-
-        return (y, transform, alpha)
+        return (y, transform)
     }
 
     /// adds slider bar animation
