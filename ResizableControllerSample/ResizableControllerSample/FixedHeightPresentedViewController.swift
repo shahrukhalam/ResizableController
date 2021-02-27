@@ -13,6 +13,9 @@ class FixedHeightPresentedViewController: UIViewController {
     @IBOutlet weak var swipeLabel: UILabel!
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        view.backgroundColor = .systemBackground
+        swipeLabel.backgroundColor = UIColor.systemBackground
     }
 }
 

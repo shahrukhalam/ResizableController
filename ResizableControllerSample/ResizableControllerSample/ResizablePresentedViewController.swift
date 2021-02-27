@@ -20,7 +20,8 @@ class ResizablePresentedViewController: UIViewController {
     }
 
     private func addInfoButton() {
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
+        swipeLabel.backgroundColor = UIColor.systemBackground
 
         view.addSubview(infoButton)
         infoButton.translatesAutoresizingMaskIntoConstraints = false

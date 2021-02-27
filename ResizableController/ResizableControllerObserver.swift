@@ -273,7 +273,7 @@ private extension ResizableControllerObserver {
 
         UIView.animate(withDuration: animationDuration, animations: {
             self.view?.frame.origin.y = value
-            self.presentingTranslation(view: self.presentingVC?.view,
+            self.presentingTranslation(viewController: self.presentingVC,
                                        minY: self.presentingVCminY,
                                        transaltion: value)
         }, completion: { _ in
@@ -298,13 +298,20 @@ private extension ResizableControllerObserver {
     }
 
     /// Scales presenting view controller as per translation
-    func presentingTranslation(view: UIView?, minY: CGFloat, transaltion: CGFloat) {
-        guard let view = view else { return }
+    func presentingTranslation(viewController: UIViewController?, minY: CGFloat, transaltion: CGFloat) {
+        guard let viewController = viewController else {
+            return
+        }
 
         let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
 //        view.frame.origin.y = values.y
-        view.layer.transform = values.t
-        view.alpha = values.alpha
+        viewController.view.layer.transform = values.t
+
+        var presentingViewController = viewController.presentingViewController
+        while presentingViewController != nil {
+            presentingViewController?.view.layer.transform = values.t
+            presentingViewController = presentingViewController?.presentingViewController
+        }
     }
 
     func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D, alpha: CGFloat) {
@@ -322,8 +329,8 @@ private extension ResizableControllerObserver {
         let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
         let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
 
-        let alphaMin: CGFloat = 0.8
-        let alphaMax: CGFloat = 1
+        let alphaMin: CGFloat = 0.6
+        let alphaMax: CGFloat = 0.75
         let alpha = alphaMax - (alphaMax - alphaMin) * percentage
 
         return (y, transform, alpha)

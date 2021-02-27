@@ -12,6 +12,8 @@ class PresentingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Resizable Controller"
+
+        view.backgroundColor = .systemBackground
     }
 
     @IBAction func onTapOfCustomHeightController(_ sender: Any) {

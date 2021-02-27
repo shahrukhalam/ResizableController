@@ -40,7 +40,6 @@ class ResizableAnimatedController: NSObject {
     var isPresenting: Bool
 
     private var presntingViewControlerMinY: CGFloat?
-    private var presntingViewOriginalAlpha: CGFloat = 1
 
     private weak var viewToBeDismissed: UIViewController?
     private let tapGesture = UITapGestureRecognizer()
@@ -104,7 +103,6 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             toVC.modalPresentationCapturesStatusBarAppearance = true
 
             presntingViewControlerMinY = fromVC.view.frame.minY
-            presntingViewOriginalAlpha = fromVC.view.alpha
 
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.setupViewCorners(radius: 10)
@@ -113,9 +111,7 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
                 fromVC.view.layer.transform = transform
                 toVC.view.frame.origin.y = self.initialTopOffset
                 toVC.setupViewCorners(radius: 10)
-                if isPresentedFullScreen {
-                    fromVC.view.alpha = 0.8
-                }
+                self.dimmingView.alpha = 0.25
             }, completion: { _ in
                 fromVC.endAppearanceTransition()
                 toVC.endAppearanceTransition()
@@ -129,7 +125,7 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             UIView.animate(withDuration: animationDuration, animations: {
                 fromVC.view.frame.origin.y = UIScreen.main.bounds.maxY
                 toVC.view.layer.transform = ViewControlerScale.reset.transform
-                toVC.view.alpha = self.presntingViewOriginalAlpha
+                self.dimmingView.alpha = 0
 
                 switch toVC.viewPresentationStyle() {
                 case .custom, .default:
