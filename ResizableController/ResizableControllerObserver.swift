@@ -82,13 +82,16 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     weak var delegate: ResizableControllerPositionHandler?
     weak var presentingVC: UIViewController?
 
-    var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.08
+    var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.06
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
     private let screenTopOffset = UIScreen.main.bounds.height
-    private let presentingViewPeek: CGFloat = 15
-    private let minTransformXY: CGFloat = 0.92
-    private let maxTransformXY: CGFloat = 0.95
+    private let presentingViewPeek: CGFloat = 10
+    private lazy var minTransformXY: CGFloat = {
+        let finalTopOffset = UIScreen.main.bounds.height * 0.06
+        return 1 - (finalTopOffset - presentingViewPeek) / (UIScreen.main.bounds.height / 2)
+    }()
+    private let maxTransformXY: CGFloat = 1
     private let settlingDuration: TimeInterval = 0.2
 
     private lazy var slideIndicativeView: UIView = {
@@ -125,8 +128,13 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     fileprivate func setupDelegate(_ delegate: ResizableControllerPositionHandler?) {
         self.delegate = delegate
 
-        self.estimatedFinalTopOffset = delegate?.finalTopOffset ?? ResizableConstants.maximumTopOffset
-        self.estimatedInitialTopOffset = delegate?.initialTopOffset ?? ResizableConstants.maximumTopOffset
+        if let finalTopOffset = delegate?.finalTopOffset {
+            self.estimatedFinalTopOffset = finalTopOffset
+        }
+
+        if let initialTopOffset = delegate?.initialTopOffset {
+            self.estimatedInitialTopOffset = initialTopOffset
+        }
     }
 
     /// handles user's swipe interactions
@@ -294,7 +302,7 @@ private extension ResizableControllerObserver {
         guard let view = view else { return }
 
         let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
-        view.frame.origin.y = values.y
+//        view.frame.origin.y = values.y
         view.layer.transform = values.t
     }
 
@@ -303,15 +311,16 @@ private extension ResizableControllerObserver {
         let presentingViewYMin = minY
         let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
         let presentedViewYMin = estimatedFinalTopOffset
-        let presentedViewYMax = estimatedInitialTopOffset
-        let currentPresentedViewY = transaltion
+        let isPresentedFullScreen = estimatedInitialTopOffset == estimatedFinalTopOffset
+        let presentedViewYMax = isPresentedFullScreen ? screenTopOffset : estimatedInitialTopOffset
+        let currentPresentedViewY = min(transaltion, presentedViewYMax)
         let percentage = (presentedViewYMax - currentPresentedViewY)/(presentedViewYMax - presentedViewYMin)
         let y = presentingViewYMin + (presentingViewYMax - presentingViewYMin) * percentage
 
         let presentingViewTMin = minTransformXY
         let presentingViewTMax = maxTransformXY
         let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
-        let transform = CATransform3DMakeScale(transformXY, 1, 1)
+        let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
 
         return (y, transform)
     }

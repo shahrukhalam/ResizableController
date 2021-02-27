@@ -21,9 +21,10 @@ enum ViewControlerScale {
     var transform: CATransform3D {
         switch self {
         case .backgroundPopUpScale:
-            return CATransform3DMakeScale(0.95, 1, 1)
+            return CATransform3DMakeScale(1, 1, 1)
         case .backgroundFullScreenScale:
-            return CATransform3DMakeScale(0.92, 1, 1)
+            let transformXY = 0.88 + 20 / UIScreen.main.bounds.height
+            return CATransform3DMakeScale(transformXY, transformXY, 1)
         case .reset:
             return CATransform3DMakeScale(1, 1, 1)
         }
@@ -87,9 +88,10 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
         if isPresenting {
             viewToBeDismissed = toVC
 
-            toVC.view.frame = CGRect(x: 0.0, y: fromVC.view.frame.maxY,
+            toVC.view.frame = CGRect(x: 0.0,
+                                     y: fromVC.view.frame.maxY,
                                      width: UIScreen.main.bounds.width,
-                                     height: UIScreen.main.bounds.height - estimatedFinalTopOffset)
+                                     height: UIScreen.main.bounds.height)
 
             containerView.addSubview(dimmingView)
             dimmingView.edgesToSuperView()
@@ -100,18 +102,13 @@ extension ResizableAnimatedController: UIViewControllerAnimatedTransitioning {
             toVC.modalPresentationCapturesStatusBarAppearance = true
 
             UIView.animate(withDuration: animationDuration, animations: {
-                fromVC.setupViewCorners(radius: 12)
-                fromVC.view.layer.transform =  ViewControlerScale.backgroundPopUpScale.transform
+                fromVC.setupViewCorners(radius: 10)
+                let isPresentedFullScreen = self.initialTopOffset == self.estimatedFinalTopOffset
+                let transform = isPresentedFullScreen ? ViewControlerScale.backgroundFullScreenScale.transform : ViewControlerScale.backgroundPopUpScale.transform
+                fromVC.view.layer.transform = transform
                 toVC.view.frame.origin.y = self.initialTopOffset
-                toVC.setupViewCorners(radius: 12)
-
+                toVC.setupViewCorners(radius: 10)
                 self.dimmingView.alpha = 0.2
-                switch fromVC.viewPresentationStyle() {
-                case .custom, .default:
-                    break
-                case .none:
-                    fromVC.view.frame.origin.y = UIScreen.main.bounds.height * 0.04
-                }
             }, completion: { _ in
                 self.presntingViewControlerMinY = fromVC.view.frame.minY
                 fromVC.endAppearanceTransition()

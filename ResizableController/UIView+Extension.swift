@@ -29,7 +29,7 @@ extension UIView {
 }
 
 public struct ResizableConstants {
-    public static let maximumTopOffset = UIScreen.main.bounds.height * 0.08
+    public static let maximumTopOffset = UIScreen.main.bounds.height * 0.06
     public static let animationDuration: TimeInterval = 0.3
 }
 
