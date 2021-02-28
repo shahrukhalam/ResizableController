@@ -9,23 +9,23 @@ import UIKit
 
 /// Protocol to integrate Resizable Controller model presentation. To be conformed by the modally presented controller
 public protocol ResizableControllerPositionHandler: UIViewController {
-
+    
     /// Override this property if you do not want to include intuitive slide up indicator. Disabled by default for non-resizable views controllers.
     var shouldShowSlideUpIndication: Bool { get }
-
+    
     /// Override this property to give differnent colour to Slider up indicator. Defaults to darkGrey with alpha 0.5
     var sliderBackgroundColor: UIColor { get }
-
+    
     /// Override this property to give initial custom height, calculated from top.
     var initialTopOffset: CGFloat { get }
-
+    
     /// Override this property to give custom final height, calculated from top. Resizable controller will change its height from initialTopOffset to finalTopOffset.
     var finalTopOffset: CGFloat { get }
-
+    
     /// Override this property to add behaviours to view controller before it changes it size.
     /// - Parameter value: new top offset to which view controller will shifted position.
     func willMoveTopOffset(value: CGFloat)
-
+    
     /// Override this property to add additional behaviours to view controller after it changes it size.
     /// - Parameter value: new top offset after view controller has shifted position
     func didMoveTopOffset(value: CGFloat)
@@ -41,27 +41,27 @@ extension ResizableControllerPositionHandler {
 // MARK: Public default Implementation for protocol
 
 public extension ResizableControllerPositionHandler {
-
+    
     func willMoveTopOffset(value: CGFloat) {  }
-
+    
     func didMoveTopOffset(value: CGFloat) {
         if value == UIScreen.main.bounds.height {
             self.dismiss(animated: true, completion: nil)
         }
     }
-
+    
     var sliderBackgroundColor: UIColor {
         UIColor.darkGray.withAlphaComponent(0.5)
     }
-
+    
     var initialTopOffset: CGFloat {
         return ResizableConstants.maximumTopOffset
     }
-
+    
     var finalTopOffset: CGFloat {
         return ResizableConstants.maximumTopOffset
     }
-
+    
     var shouldShowSlideUpIndication: Bool {
         return initialTopOffset != finalTopOffset
     }
@@ -72,17 +72,17 @@ public extension ResizableControllerPositionHandler {
 /// It provides call backs on to ResizableControllerPositionHandler protocol conformed class once user interacts with the view controller.
 /// Refer to ResizableControllerPositionHandler to see what observations can be subscibed
 class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScrollViewDelegate {
-
+    
     private let panGesture = UIPanGestureRecognizer()
     private var viewPosition: SliderPosition = .present
-
+    
     private weak var presentedViewController: UIViewController?
     private weak var view: UIView?
     private let animationDuration: TimeInterval
-
+    
     weak var delegate: ResizableControllerPositionHandler?
     weak var presentingVC: UIViewController?
-
+    
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.06
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
@@ -97,7 +97,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }()
     private let maxTransformXY: CGFloat = 1
     private let settlingDuration: TimeInterval = 0.2
-
+    
     private lazy var slideIndicativeView: UIView = {
         let view = UIView()
         view.backgroundColor = delegate?.sliderBackgroundColor
@@ -107,7 +107,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-
+    
     init(in presentedViewController: UIViewController,
          duration: TimeInterval = 0.3,
          delegate: ResizableControllerPositionHandler? = nil) {
@@ -115,47 +115,47 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         self.view = presentedViewController.view
         self.animationDuration = duration
         super.init()
-
+        
         setupDelegate(delegate)
         commonInit()
     }
-
+    
     private func commonInit() {
         setupGestureRecoganisers()
         addSliderView()
     }
-
+    
     private func setupGestureRecoganisers() {
         guard let view = view else { return }
         self.panGesture.addTarget(self, action: #selector(handlePan))
         self.panGesture.delegate = self
         view.addGestureRecognizer(panGesture)
     }
-
+    
     fileprivate func setupDelegate(_ delegate: ResizableControllerPositionHandler?) {
         self.delegate = delegate
-
+        
         if let finalTopOffset = delegate?.finalTopOffset {
             self.estimatedFinalTopOffset = finalTopOffset
         }
-
+        
         if let initialTopOffset = delegate?.initialTopOffset {
             self.estimatedInitialTopOffset = initialTopOffset
         }
     }
-
+    
     /// handles user's swipe interactions
     @objc private func handlePan(_ gestureRecognizer: UIGestureRecognizer) {
         guard let view = view,
               let currentView = panGesture.view,
               gestureRecognizer == panGesture else { return }
-
+        
         let gestureState = panGesture.state
         let gestureYTranslation = panGesture.translation(in: currentView).y
         let viewOriginY = view.frame.origin.y
-
+        
         setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: gestureState)
-
+        
         // Translates Presented View & Transforms Presenting View
         let translationValue = translationValueIfAny(gestureState: gestureState,
                                                      viewOriginY: viewOriginY,
@@ -169,11 +169,11 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                viewOriginY: viewOriginY)
         if let value = settlingValue {
             translate(value: value, animationDuration: settlingDuration)
-
+            
             guard let viewController = presentedViewController as? ResizableContainerViewController else {
                 return
             }
-
+            
             switch value {
             case estimatedFinalTopOffset:
                 viewController.mode = .fullScreen
@@ -186,13 +186,13 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             }
         }
     }
-
+    
     func setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: UIGestureRecognizer.State) {
         switch gestureState {
         case .began:
             if let viewController = presentingVC, presentingVCminY == 0 {
                 presentingVCminY = viewController.view.frame.minY
-
+                
                 let presentingView: UIView = viewController.view
                 let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
                 automaticMinY = convertedRectWRTWindow.minY
@@ -202,7 +202,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             break
         }
     }
-
+    
     func translationValueIfAny(gestureState: UIGestureRecognizer.State,
                                viewOriginY: CGFloat,
                                gestureYTranslation: CGFloat) -> CGFloat? {
@@ -220,7 +220,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             return nil
         }
     }
-
+    
     func settlingValueIfAny(gestureState: UIGestureRecognizer.State,
                             viewOriginY: CGFloat) -> CGFloat? {
         switch gestureState {
@@ -244,13 +244,13 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
 
 // MARK: PanGesture Delegates
 extension ResizableControllerObserver {
-
+    
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-
+        
         guard let currentView = panGesture.view, gestureRecognizer == panGesture else {
             return false
         }
-
+        
         switch panGesture.dragDirection(inView: currentView) {
         case .upwards where !isHeightEqualToEstimatedHeight:
             guard delegate?.initialTopOffset != delegate?.finalTopOffset else { return false }
@@ -262,25 +262,25 @@ extension ResizableControllerObserver {
         default: return false
         }
     }
-
+    
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let currentView = gestureRecognizer.view,
               let otherView = otherGestureRecognizer.view else {
             return false
         }
-
+        
         let isPanGesture = gestureRecognizer == panGesture
         let isDescendant = otherView.isDescendant(of: currentView)
-
+        
         guard isPanGesture && isDescendant else {
             return false
         }
-
+        
         guard let scrollView = otherView as? UIScrollView else {
             return true
         }
-
+        
         return scrollView.contentOffset.y == 0
     }
 }
@@ -288,16 +288,16 @@ extension ResizableControllerObserver {
 // MARK: All About View Transaltion
 
 private extension ResizableControllerObserver {
-
+    
     var isHeightEqualToEstimatedHeight: Bool {
         guard let view = view else { return false }
         return Int(view.frame.minY) == Int(estimatedFinalTopOffset)
     }
-
+    
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat, animationDuration: TimeInterval) {
         delegate?.willMoveTopOffset(value: value)
-
+        
         UIView.animate(withDuration: animationDuration, animations: {
             self.view?.frame.origin.y = value
             self.presentingTranslation(viewController: self.presentingVC,
@@ -308,28 +308,28 @@ private extension ResizableControllerObserver {
             self.delegate?.didMoveTopOffset(value: value)
         })
     }
-
+    
     func addSliderView() {
         guard let currentView = view, delegate?.shouldShowSlideUpIndication == true else { return }
-
+        
         currentView.addSubview(slideIndicativeView)
-
+        
         NSLayoutConstraint.activate([
             slideIndicativeView.centerXAnchor.constraint(equalTo: currentView.centerXAnchor),
             slideIndicativeView.topAnchor.constraint(equalTo: currentView.topAnchor, constant: 15)
         ])
-
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.addSliderAnimation()
         }
     }
-
+    
     /// Scales presenting view controller as per translation
     func presentingTranslation(viewController: UIViewController?, minY: CGFloat, transaltion: CGFloat) {
         guard let viewController = viewController else {
             return
         }
-
+        
         guard viewController.viewPresentationStyle() != .default else {
             var superView = viewController.view.superview
             while superView != nil {
@@ -339,7 +339,11 @@ private extension ResizableControllerObserver {
                     let scaleY = values.t.m11
                     let changeYByScale = (1 - scaleY) * automaticHeight / 2
                     let expectedY = values.y
-                    superView?.frame.origin.y = expectedY - changeYByScale
+                    let minY = estimatedFinalTopOffset - presentingViewPeek
+                    let upperBoundary = max(minY, expectedY)
+                    let lowerBoundary = min(automaticMinY, upperBoundary)
+                    let yAccountingScale = lowerBoundary - changeYByScale
+                    superView?.frame.origin.y = yAccountingScale
                 }
                 
                 superView = superView?.superview
@@ -347,15 +351,15 @@ private extension ResizableControllerObserver {
             
             return
         }
-
+        
         let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
         viewController.view.layer.transform = values.t
-
+        
         guard let resizableContainerViewController = viewController as? ResizableContainerViewController,
               resizableContainerViewController.viewPresentationStyle() == .custom else {
             return
         }
-
+        
         switch resizableContainerViewController.mode {
         case .popUp:
             var presentingViewController = resizableContainerViewController.presentingViewController
@@ -367,48 +371,48 @@ private extension ResizableControllerObserver {
             resizableContainerViewController.view.frame.origin.y = values.y
         }
     }
-
+    
     func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
         let presentingViewYMin = minY
         let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
-
+        
         let presentedViewYMin = estimatedFinalTopOffset
         let isPresentedFullScreen = estimatedInitialTopOffset == estimatedFinalTopOffset
         let presentedViewYMax = isPresentedFullScreen ? middleTopOffset : estimatedInitialTopOffset
         let currentPresentedViewY = min(transaltion, presentedViewYMax)
         let percentage = (presentedViewYMax - currentPresentedViewY)/(presentedViewYMax - presentedViewYMin)
-
+        
         let y = presentingViewYMin + (presentingViewYMax - presentingViewYMin) * percentage
-
+        
         let presentingViewTMin = minTransformXY
         let presentingViewTMax = maxTransformXY
         let transformXY = presentingViewTMax - (presentingViewTMax - presentingViewTMin) * percentage
         let transform = CATransform3DMakeScale(transformXY, transformXY, 1)
-
+        
         return (y, transform)
     }
-
+    
     /// adds slider bar animation
     func addSliderAnimation() {
         let group = CAAnimationGroup()
-
+        
         let animation = CABasicAnimation(keyPath: "position")
         animation.fromValue = NSValue(cgPoint: CGPoint(x: self.slideIndicativeView.layer.position.x,
                                                        y: self.slideIndicativeView.layer.position.y))
         animation.toValue = NSValue(cgPoint: CGPoint(x: self.slideIndicativeView.layer.position.x,
                                                      y: self.slideIndicativeView.layer.position.y - 6))
-
+        
         let animationForOpactity = CABasicAnimation(keyPath: "opacity")
         animationForOpactity.fromValue = 1
         animationForOpactity.toValue = 0.7
-
+        
         group.animations = [animation, animationForOpactity]
         group.duration = 0.6
         group.autoreverses = true
         group.repeatCount = 2
         group.speed = 2
         group.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
-
+        
         self.slideIndicativeView.layer.add(group, forKey: "position")
     }
 }
@@ -418,7 +422,7 @@ extension UIPanGestureRecognizer {
     enum DraggingState {
         case upwards, downwards, idle
     }
-
+    
     func dragDirection(inView view: UIView) -> DraggingState {
         let velocity = self.velocity(in: view)
         guard abs(velocity.x) < abs(velocity.y) else { return .idle }
@@ -429,7 +433,7 @@ extension UIPanGestureRecognizer {
 enum SliderPosition {
     case present
     case dismiss
-
+    
     mutating func toggle(on view: UIView) {
         switch self {
         case .present:
