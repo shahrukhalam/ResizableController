@@ -87,7 +87,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
     var automaticMinY: CGFloat = 0
-    var automaticHeight = UIScreen.main.bounds.height
+    var automaticHeight: CGFloat = 0
     private let screenTopOffset = UIScreen.main.bounds.height
     private let middleTopOffset = UIScreen.main.bounds.height * (1 + 0.06) * 0.5
     private let presentingViewPeek: CGFloat = 10
@@ -192,7 +192,9 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         case .began:
             if let viewController = presentingVC, presentingVCminY == 0 {
                 presentingVCminY = viewController.view.frame.minY
-                
+            }
+            
+            if let viewController = presentingVC, automaticMinY == 0, automaticHeight == 0 {
                 let presentingView: UIView = viewController.view
                 let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
                 automaticMinY = convertedRectWRTWindow.minY
