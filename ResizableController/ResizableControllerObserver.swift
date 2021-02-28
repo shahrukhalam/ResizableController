@@ -86,6 +86,8 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.06
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
     var presentingVCminY: CGFloat = 0
+    var automaticMinY: CGFloat = 0
+    var automaticHeight = UIScreen.main.bounds.height
     private let screenTopOffset = UIScreen.main.bounds.height
     private let middleTopOffset = UIScreen.main.bounds.height * (1 + 0.06) * 0.5
     private let presentingViewPeek: CGFloat = 10
@@ -189,10 +191,12 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         switch gestureState {
         case .began:
             if let viewController = presentingVC, presentingVCminY == 0 {
-//                let presentingView: UIView = viewController.view
-//                let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
-//                presentingVCminY = convertedRectWRTWindow.minY
                 presentingVCminY = viewController.view.frame.minY
+
+                let presentingView: UIView = viewController.view
+                let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
+                automaticMinY = convertedRectWRTWindow.minY
+                automaticHeight = viewController.view.bounds.height
             }
         default:
             break
@@ -327,6 +331,20 @@ private extension ResizableControllerObserver {
         }
 
         guard viewController.viewPresentationStyle() != .default else {
+            var superView = viewController.view.superview
+            while superView != nil {
+                if superView?.frame.origin.y != 0 {
+                    let values = presentingTranslationValues(minY: automaticMinY, transaltion: transaltion)
+                    viewController.view.layer.transform = values.t
+                    let scaleY = values.t.m11
+                    let changeYByScale = (1 - scaleY) * automaticHeight / 2
+                    let expectedY = values.y
+                    superView?.frame.origin.y = expectedY - changeYByScale
+                }
+                
+                superView = superView?.superview
+            }
+            
             return
         }
 
