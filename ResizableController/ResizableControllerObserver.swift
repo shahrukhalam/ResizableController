@@ -24,7 +24,8 @@ public protocol ResizableControllerPositionHandler: UIViewController {
     
     /// Override this property to add behaviours to view controller before it changes it size.
     /// - Parameter value: new top offset to which view controller will shifted position.
-    func willMoveTopOffset(value: CGFloat)
+    /// - Parameter duration: animation duration with which change will take effect.
+    func willMoveTopOffset(value: CGFloat, duration: TimeInterval)
     
     /// Override this property to add additional behaviours to view controller after it changes it size.
     /// - Parameter value: new top offset after view controller has shifted position
@@ -42,7 +43,7 @@ extension ResizableControllerPositionHandler {
 
 public extension ResizableControllerPositionHandler {
     
-    func willMoveTopOffset(value: CGFloat) {  }
+    func willMoveTopOffset(value: CGFloat, duration: TimeInterval) {  }
     
     func didMoveTopOffset(value: CGFloat) {
         if value == UIScreen.main.bounds.height {
@@ -298,7 +299,7 @@ private extension ResizableControllerObserver {
     
     /// performs resizable transformation for presented and presenting view controllers
     func translate(value: CGFloat, animationDuration: TimeInterval) {
-        delegate?.willMoveTopOffset(value: value)
+        delegate?.willMoveTopOffset(value: value, duration: animationDuration)
         
         UIView.animate(withDuration: animationDuration, animations: {
             self.view?.frame.origin.y = value
