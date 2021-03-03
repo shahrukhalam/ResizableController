@@ -12,11 +12,11 @@ extension UIView {
     public func roundedCorners(withRadius radius: CGFloat) {
         layer.cornerRadius = radius
     }
-
+    
     /// Helper function to layout constraint to edges
     /// - Parameter insets: Add inset to give padding from different edges
     public func edgesToSuperView(insets: UIEdgeInsets = .zero) {
-
+        
         guard let superView = superview else { return }
         self.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -35,7 +35,7 @@ public struct ResizableConstants {
 
 
 public extension UIViewController {
-
+    
     /// An overload to implement Resizable Controller model presentation style.
     /// - Parameters:
     ///   - viewControllerToPresent: ViewController which conforms to ResizableControllerPositionHandler protocol, Refer to ResizableControllerPositionHandler documentation for use case
@@ -54,16 +54,16 @@ public extension UIViewController {
 class ResizableContainerViewController: UIViewController {
     var mode: PresentingMode = .fullScreen
     private var transitionAnimator: UIViewControllerTransitioningDelegate?
-
+    
     init(animationDuration: TimeInterval,
          childVC: UIViewController) {
         self.transitionAnimator = ResizableTransitioningController(animationDuration: animationDuration)
         super.init(nibName: nil, bundle: nil)
-
+        
         setup()
         addChildVC(childVC)
     }
-
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
@@ -71,11 +71,26 @@ class ResizableContainerViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if let presentingVC = presentingViewController,
+           let presentingView = presentingVC.view,
+           presentingVC.viewPresentationStyle() == .default,
+           ResizableControllerObserver.automaticMinY == 0,
+           ResizableControllerObserver.automaticHeight == 0 {
+            let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
+            ResizableControllerObserver.automaticMinY = convertedRectWRTWindow.minY
+            ResizableControllerObserver.automaticHeight = presentingVC.view.bounds.height
+        }
+    }
+    
     private func setup() {
         modalPresentationStyle = .custom
         transitioningDelegate = transitionAnimator
     }
+    
     private func addChildVC(_ child: UIViewController) {
         view.addSubview(child.view)
         addChild(child)

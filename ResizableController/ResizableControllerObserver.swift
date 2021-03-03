@@ -86,9 +86,8 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     
     var estimatedFinalTopOffset = UIScreen.main.bounds.height * 0.06
     var estimatedInitialTopOffset = UIScreen.main.bounds.height * 0.55
-    var presentingVCminY: CGFloat = 0
-    var automaticMinY: CGFloat = 0
-    var automaticHeight: CGFloat = 0
+    static var automaticMinY: CGFloat = 0
+    static var automaticHeight: CGFloat = 0
     private let screenTopOffset = UIScreen.main.bounds.height
     private let middleTopOffset = UIScreen.main.bounds.height * (1 + 0.06) * 0.5
     private let presentingViewPeek: CGFloat = 10
@@ -155,8 +154,6 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         let gestureYTranslation = panGesture.translation(in: currentView).y
         let viewOriginY = view.frame.origin.y
         
-        setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: gestureState)
-        
         // Translates Presented View & Transforms Presenting View
         let translationValue = translationValueIfAny(gestureState: gestureState,
                                                      viewOriginY: viewOriginY,
@@ -185,24 +182,6 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             default:
                 assertionFailure("Unexpected Settling Value")
             }
-        }
-    }
-    
-    func setPresentingVCMinYIfNeededForDefaultIOSTransitions(gestureState: UIGestureRecognizer.State) {
-        switch gestureState {
-        case .began:
-            if let viewController = presentingVC, presentingVCminY == 0 {
-                presentingVCminY = viewController.view.frame.minY
-            }
-            
-            if let viewController = presentingVC, automaticMinY == 0, automaticHeight == 0 {
-                let presentingView: UIView = viewController.view
-                let convertedRectWRTWindow = presentingView.convert(presentingView.frame, to: nil)
-                automaticMinY = convertedRectWRTWindow.minY
-                automaticHeight = viewController.view.bounds.height
-            }
-        default:
-            break
         }
     }
     
@@ -303,9 +282,7 @@ private extension ResizableControllerObserver {
         
         UIView.animate(withDuration: animationDuration, animations: {
             self.view?.frame.origin.y = value
-            self.presentingTranslation(viewController: self.presentingVC,
-                                       minY: self.presentingVCminY,
-                                       transaltion: value)
+            self.presentingTranslation(viewController: self.presentingVC, transaltion: value)
         }, completion: { _ in
             self.panGesture.setTranslation(.zero, in: self.view)
             self.delegate?.didMoveTopOffset(value: value)
@@ -328,56 +305,71 @@ private extension ResizableControllerObserver {
     }
     
     /// Scales presenting view controller as per translation
-    func presentingTranslation(viewController: UIViewController?, minY: CGFloat, transaltion: CGFloat) {
+    func presentingTranslation(viewController: UIViewController?, transaltion: CGFloat) {
         guard let viewController = viewController else {
             return
         }
         
-        guard viewController.viewPresentationStyle() != .default else {
+        let presentationStyle = viewController.viewPresentationStyle()
+        switch presentationStyle {
+        case .default:
             var superView = viewController.view.superview
             while superView != nil {
                 if superView?.frame.origin.y != 0 {
-                    let values = presentingTranslationValues(minY: automaticMinY, transaltion: transaltion)
+                    let initialY = estimatedFinalTopOffset - presentingViewPeek
+                    let values = presentingTranslationValues(initialY: initialY,
+                                                             finalY: Self.automaticMinY,
+                                                             transaltion: transaltion)
                     viewController.view.layer.transform = values.t
                     let scaleY = values.t.m11
-                    let changeYByScale = (1 - scaleY) * automaticHeight / 2
+                    let changeYByScale = (1 - scaleY) * Self.automaticHeight / 2
                     let expectedY = values.y
                     let minY = estimatedFinalTopOffset - presentingViewPeek
                     let upperBoundary = max(minY, expectedY)
-                    let lowerBoundary = min(automaticMinY, upperBoundary)
+                    let lowerBoundary = min(Self.automaticMinY, upperBoundary)
                     let yAccountingScale = lowerBoundary - changeYByScale
                     superView?.frame.origin.y = yAccountingScale
                 }
                 
                 superView = superView?.superview
             }
-            
-            return
-        }
-        
-        let values = presentingTranslationValues(minY: minY, transaltion: transaltion)
-        viewController.view.layer.transform = values.t
-        
-        guard let resizableContainerViewController = viewController as? ResizableContainerViewController,
-              resizableContainerViewController.viewPresentationStyle() == .custom else {
-            return
-        }
-        
-        switch resizableContainerViewController.mode {
-        case .popUp:
-            var presentingViewController = resizableContainerViewController.presentingViewController
-            while presentingViewController != nil {
-                presentingViewController?.view.layer.transform = values.t
-                presentingViewController = presentingViewController?.presentingViewController
+        case .none:
+            let initialY = estimatedFinalTopOffset - presentingViewPeek
+            let values = presentingTranslationValues(initialY: initialY, finalY: 0, transaltion: transaltion)
+            viewController.view.layer.transform = values.t
+        case .custom:
+            guard let resizableVC = viewController as? ResizableContainerViewController else {
+                assertionFailure("Must be a ResizableContainerViewController with Custom Presentation")
+                return
             }
-        case .fullScreen:
-            resizableContainerViewController.view.frame.origin.y = values.y
+            
+            switch resizableVC.mode {
+            case .popUp:
+                let initialY = estimatedInitialTopOffset
+                let finalY = estimatedFinalTopOffset - presentingViewPeek
+                let values = presentingTranslationValues(initialY: initialY,
+                                                         finalY: finalY,
+                                                         transaltion: transaltion)
+                resizableVC.view.layer.transform = values.t
+                let presentingViewController = resizableVC.presentingViewController
+                presentingTranslation(viewController: presentingViewController, transaltion: transaltion)
+            case .fullScreen:
+                let initialY = estimatedFinalTopOffset - presentingViewPeek
+                let finalY = estimatedFinalTopOffset
+                let values = presentingTranslationValues(initialY: initialY,
+                                                         finalY: finalY,
+                                                         transaltion: transaltion)
+                resizableVC.view.layer.transform = values.t
+                resizableVC.view.frame.origin.y = values.y
+            }
         }
     }
     
-    func presentingTranslationValues(minY: CGFloat, transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
-        let presentingViewYMin = minY
-        let presentingViewYMax = estimatedFinalTopOffset - presentingViewPeek
+    func presentingTranslationValues(initialY: CGFloat,
+                                     finalY: CGFloat,
+                                     transaltion: CGFloat) -> (y: CGFloat, t: CATransform3D) {
+        let presentingViewYMin = finalY
+        let presentingViewYMax = initialY
         
         let presentedViewYMin = estimatedFinalTopOffset
         let isPresentedFullScreen = estimatedInitialTopOffset == estimatedFinalTopOffset
