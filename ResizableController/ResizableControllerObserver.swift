@@ -27,6 +27,13 @@ public protocol ResizableControllerPositionHandler: UIViewController {
     /// - Parameter duration: animation duration with which change will take effect.
     func willMoveTopOffset(value: CGFloat, duration: TimeInterval)
     
+    /// Override this property to add behaviours to view controller before it settles.
+    /// - Parameter value: new top offset to which view controller will settle.
+    /// - Parameter animator: UIViewPropertyAnimator which animates the change to effect
+    /// This takes scroll speed with which user lifts the finger into account
+    /// Client should animate their changes on this `animator` for fluid experience
+    func willSettleTopOffset(value: CGFloat, animator: UIViewPropertyAnimator)
+    
     /// Override this property to add additional behaviours to view controller after it changes it size.
     /// - Parameter value: new top offset after view controller has shifted position
     func didMoveTopOffset(value: CGFloat)
@@ -44,6 +51,8 @@ extension ResizableControllerPositionHandler {
 public extension ResizableControllerPositionHandler {
     
     func willMoveTopOffset(value: CGFloat, duration: TimeInterval) {  }
+    
+    func willSettleTopOffset(value: CGFloat, animator: UIViewPropertyAnimator) {  }
     
     func didMoveTopOffset(value: CGFloat) {
         if value == UIScreen.main.bounds.height {
@@ -163,10 +172,12 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         }
         
         // Settle or Dismiss Presented ViewController
+        let velocityY = panGesture.velocity(in: currentView).y
         let settlingValue = settlingValueIfAny(gestureState: gestureState,
-                                               viewOriginY: viewOriginY)
+                                               viewOriginY: viewOriginY,
+                                               velocityY: velocityY)
         if let value = settlingValue {
-            translate(value: value, animationDuration: settlingDuration)
+            settle(value: value, velocityY: velocityY)
             
             guard let viewController = presentedViewController as? ResizableContainerViewController else {
                 return
@@ -204,16 +215,19 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }
     
     func settlingValueIfAny(gestureState: UIGestureRecognizer.State,
-                            viewOriginY: CGFloat) -> CGFloat? {
+                            viewOriginY: CGFloat,
+                            velocityY: CGFloat) -> CGFloat? {
         switch gestureState {
         case .possible, .began, .changed:
             return nil
         case .ended, .cancelled, .failed:
+            let projectedY = project(initialVelocity: velocityY, decelerationRate: .normal)
+            let expecedY = viewOriginY + projectedY
             let upperHalf = (estimatedFinalTopOffset + estimatedInitialTopOffset)/2
             let lowerHalf = (estimatedInitialTopOffset + screenTopOffset)/2
-            if viewOriginY <= upperHalf {
+            if expecedY <= upperHalf {
                 return estimatedFinalTopOffset
-            } else if (viewOriginY > upperHalf) && (viewOriginY <= lowerHalf) {
+            } else if (expecedY > upperHalf) && (expecedY <= lowerHalf) {
                 return estimatedInitialTopOffset
             } else {
                 return screenTopOffset
@@ -221,6 +235,36 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         @unknown default:
             return nil
         }
+    }
+    
+    func project(initialVelocity: CGFloat, decelerationRate: UIScrollView.DecelerationRate) -> CGFloat {
+        let deceleration = decelerationRate.rawValue
+        return (initialVelocity / 1000.0) * deceleration / (1.0 - deceleration)
+    }
+    
+    func relativeSettlingVelocity(velocityY: CGFloat) -> CGVector {
+        let projectedY = project(initialVelocity: velocityY, decelerationRate: .normal)
+        return CGVector(dx: 0, dy: velocityY / projectedY)
+    }
+    
+    func settle(value: CGFloat, velocityY: CGFloat) {
+        let velocity = relativeSettlingVelocity(velocityY: velocityY)
+        let timingParameters = UISpringTimingParameters(dampingRatio: 1, initialVelocity: velocity)
+        let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
+        
+        delegate?.willSettleTopOffset(value: value, animator: animator)
+        
+        animator.addAnimations {
+            self.view?.frame.origin.y = value
+            self.presentingTranslation(viewController: self.presentingVC, transaltion: value)
+        }
+        
+        animator.addCompletion { _ in
+            self.panGesture.setTranslation(.zero, in: self.view)
+            self.delegate?.didMoveTopOffset(value: value)
+        }
+        
+        animator.startAnimation()
     }
 }
 
