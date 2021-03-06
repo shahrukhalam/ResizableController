@@ -177,22 +177,11 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
                                                viewOriginY: viewOriginY,
                                                velocityY: velocityY)
         if let value = settlingValue {
-            settle(value: value, velocityY: velocityY)
-            
-            guard let viewController = presentedViewController as? ResizableContainerViewController else {
-                return
-            }
-            
-            switch value {
-            case estimatedFinalTopOffset:
-                viewController.mode = .fullScreen
-            case estimatedInitialTopOffset:
-                viewController.mode = .popUp
-            case screenTopOffset:
-                break
-            default:
-                assertionFailure("Unexpected Settling Value")
-            }
+            let relativeVelocity = relativeSettlingVelocity(value: value,
+                                                            viewOriginY: viewOriginY,
+                                                            velocityY: velocityY)
+            settle(value: value, velocity: relativeVelocity)
+            switchModeIfNeeded(value: value, presentedViewController: presentedViewController)
         }
     }
     
@@ -242,13 +231,12 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         return (initialVelocity / 1000.0) * deceleration / (1.0 - deceleration)
     }
     
-    func relativeSettlingVelocity(velocityY: CGFloat) -> CGVector {
-        let projectedY = project(initialVelocity: velocityY, decelerationRate: .normal)
-        return CGVector(dx: 0, dy: velocityY / projectedY)
+    func relativeSettlingVelocity(value: CGFloat, viewOriginY: CGFloat, velocityY: CGFloat) -> CGVector {
+        let changeY = value - viewOriginY
+        return CGVector(dx: 0, dy: velocityY / changeY)
     }
     
-    func settle(value: CGFloat, velocityY: CGFloat) {
-        let velocity = relativeSettlingVelocity(velocityY: velocityY)
+    func settle(value: CGFloat, velocity: CGVector) {
         let timingParameters = UISpringTimingParameters(dampingRatio: 1, initialVelocity: velocity)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
         
@@ -265,6 +253,23 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         }
         
         animator.startAnimation()
+    }
+    
+    func switchModeIfNeeded(value: CGFloat, presentedViewController: UIViewController?) {
+        guard let viewController = presentedViewController as? ResizableContainerViewController else {
+            return
+        }
+        
+        switch value {
+        case estimatedFinalTopOffset:
+            viewController.mode = .fullScreen
+        case estimatedInitialTopOffset:
+            viewController.mode = .popUp
+        case screenTopOffset:
+            break
+        default:
+            assertionFailure("Unexpected Settling Value")
+        }
     }
 }
 
