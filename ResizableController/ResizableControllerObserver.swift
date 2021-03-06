@@ -237,9 +237,10 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }
     
     func settle(value: CGFloat, velocity: CGVector) {
-        // Damping(Bounciness) of 0.999 is used for hinting Boundaries, normally 1 is used
-        let timingParameters = UISpringTimingParameters(damping: 0.999,
-                                                        response: 0.3,
+        // Damping(Bounciness) of 0.8 is used for hinting Boundaries, normally 1 is used
+        // Response(period of the spring oscillation) of 0.2 is used for a little stiffer spring that yields a greater amount of force for moving objects
+        let timingParameters = UISpringTimingParameters(damping: 0.8,
+                                                        response: 0.2,
                                                         initialVelocity: velocity)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
         
@@ -287,8 +288,7 @@ extension UISpringTimingParameters {
     convenience init(damping: CGFloat, response: CGFloat, initialVelocity: CGVector) {
         let stiffness = pow(2 * .pi / response, 2)
         let damp = 4 * .pi * damping / response
-        // Mass of 2 is used to give a little heavy feel, normally 1 is used
-        self.init(mass: 2, stiffness: stiffness, damping: damp, initialVelocity: initialVelocity)
+        self.init(mass: 1, stiffness: stiffness, damping: damp, initialVelocity: initialVelocity)
     }
     
 }
