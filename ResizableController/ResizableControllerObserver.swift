@@ -237,7 +237,10 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }
     
     func settle(value: CGFloat, velocity: CGVector) {
-        let timingParameters = UISpringTimingParameters(dampingRatio: 1, initialVelocity: velocity)
+        // Damping(Bounciness) of 0.999 is used for hinting Boundaries, normally 1 is used
+        let timingParameters = UISpringTimingParameters(damping: 0.999,
+                                                        response: 0.3,
+                                                        initialVelocity: velocity)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
         
         delegate?.willSettleTopOffset(value: value, animator: animator)
@@ -271,6 +274,23 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
             assertionFailure("Unexpected Settling Value")
         }
     }
+}
+
+extension UISpringTimingParameters {
+    
+    /// A design-friendly way to create a spring timing curve.
+    ///
+    /// - Parameters:
+    ///   - damping: The 'bounciness' of the spring animation. Value must be between 0 and 1.
+    ///   - response: The 'period' of the spring oscillation.
+    ///   - initialVelocity: The vector describing the velocity with which mass hits the spring
+    convenience init(damping: CGFloat, response: CGFloat, initialVelocity: CGVector) {
+        let stiffness = pow(2 * .pi / response, 2)
+        let damp = 4 * .pi * damping / response
+        // Mass of 2 is used to give a little heavy feel, normally 1 is used
+        self.init(mass: 2, stiffness: stiffness, damping: damp, initialVelocity: initialVelocity)
+    }
+    
 }
 
 // MARK: PanGesture Delegates
