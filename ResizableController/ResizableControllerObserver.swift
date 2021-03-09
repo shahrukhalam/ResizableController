@@ -212,11 +212,12 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         case .ended, .cancelled, .failed:
             let projectedY = project(initialVelocity: velocityY, decelerationRate: .normal)
             let expecedY = viewOriginY + projectedY
-            let upperHalf = (estimatedFinalTopOffset + estimatedInitialTopOffset)/2
-            let lowerHalf = (estimatedInitialTopOffset + screenTopOffset)/2
-            if expecedY <= upperHalf {
+            let percentage: CGFloat = 60/100
+            let upperDivide = estimatedFinalTopOffset + (estimatedInitialTopOffset - estimatedFinalTopOffset) * percentage
+            let lowerDivide = estimatedInitialTopOffset + (screenTopOffset - estimatedInitialTopOffset) * percentage
+            if expecedY <= upperDivide {
                 return estimatedFinalTopOffset
-            } else if (expecedY > upperHalf) && (expecedY <= lowerHalf) {
+            } else if (expecedY > upperDivide) && (expecedY <= lowerDivide) {
                 return estimatedInitialTopOffset
             } else {
                 return screenTopOffset
