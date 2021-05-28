@@ -12,7 +12,7 @@ class ResizablePresentedViewController: UIViewController {
 
     @IBOutlet weak var swipeLabel: UILabel!
     private let infoButton = UIButton(type: .infoLight)
-    var initialTopOffset: CGFloat = 200
+    var initialTopOffset: CGFloat = 500
 
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -238,13 +238,13 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }
     
     func settle(value: CGFloat, velocity: CGVector) {
-        // Damping(Bounciness) of 0.8 is used for hinting Boundaries, normally 1 is used
-        // Response(period of the spring oscillation) of 0.2 is used for a little stiffer spring that yields a greater amount of force for moving objects
-        let timingParameters = UISpringTimingParameters(damping: 0.8,
-                                                        response: 0.2,
+        // Damping(Bounciness) of 0.9 is used for hinting Boundaries, normally 1 is used
+        // Response(period of the spring oscillation) of 0.5 is used for a little stiffer spring that yields a greater amount of force for moving objects
+        let timingParameters = UISpringTimingParameters(dampingRatio: 0.9,
+                                                        frequencyResponse: 0.5,
                                                         initialVelocity: velocity)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
-        
+
         delegate?.willSettleTopOffset(value: value, animator: animator)
         
         animator.addAnimations {
@@ -283,13 +283,18 @@ extension UISpringTimingParameters {
     /// A design-friendly way to create a spring timing curve.
     ///
     /// - Parameters:
-    ///   - damping: The 'bounciness' of the spring animation. Value must be between 0 and 1.
-    ///   - response: The 'period' of the spring oscillation.
+    ///   - dampingRatio: The 'bounciness' of the spring animation. Value must be between 0 and 1.
+    ///   - frequencyResponse: The 'period' of the spring oscillation.
     ///   - initialVelocity: The vector describing the velocity with which mass hits the spring
-    convenience init(damping: CGFloat, response: CGFloat, initialVelocity: CGVector) {
-        let stiffness = pow(2 * .pi / response, 2)
-        let damp = 4 * .pi * damping / response
-        self.init(mass: 1, stiffness: stiffness, damping: damp, initialVelocity: initialVelocity)
+    convenience init(dampingRatio: CGFloat, frequencyResponse: CGFloat, initialVelocity: CGVector) {
+        let isDampingRatioValid = (dampingRatio >= 0 && dampingRatio <= 1)
+        precondition(isDampingRatioValid, "Damping Ratio should be in percentage")
+        precondition(frequencyResponse > 0, "Frequency Response should be greater than 0")
+
+        let mass: CGFloat = 3
+        let stiffness = pow(2 * .pi / frequencyResponse, 2) * mass
+        let damping = 4 * .pi * dampingRatio * mass / frequencyResponse
+        self.init(mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity)
     }
     
 }
