@@ -139,6 +139,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         self.panGesture.addTarget(self, action: #selector(handlePan))
         self.panGesture.delegate = self
         view.addGestureRecognizer(panGesture)
+        view.isMultipleTouchEnabled = true
     }
     
     fileprivate func setupDelegate(_ delegate: ResizableControllerPositionHandler?) {
@@ -335,6 +336,10 @@ extension ResizableControllerObserver {
         }
     }
     
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let currentView = gestureRecognizer.view,
@@ -350,7 +355,7 @@ extension ResizableControllerObserver {
         }
         
         guard let scrollView = otherView as? UIScrollView else {
-            return true
+            return false
         }
         
         return scrollView.contentOffset.y == 0
