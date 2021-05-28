@@ -253,7 +253,7 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     }
     
     func settle(value: CGFloat, velocity: CGVector) {
-        // Damping(Bounciness) of 0.9 is used for hinting Boundaries, normally 1 is used
+        // Damping(Bounciness) of 0.95 is used for hinting Boundaries, normally 1 is used
         // Response(period of the spring oscillation) of 0.4 is used for a little stiffer spring that yields a greater amount of force for moving objects
         let timingParameters = UISpringTimingParameters(dampingRatio: 0.95,
                                                         frequencyResponse: 0.4,
