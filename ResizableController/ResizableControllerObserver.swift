@@ -212,15 +212,30 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
         case .ended, .cancelled, .failed:
             let projectedY = project(initialVelocity: velocityY, decelerationRate: .normal)
             let expecedY = viewOriginY + projectedY
-            let percentage: CGFloat = 60/100
-            let upperDivide = estimatedFinalTopOffset + (estimatedInitialTopOffset - estimatedFinalTopOffset) * percentage
-            let lowerDivide = estimatedInitialTopOffset + (screenTopOffset - estimatedInitialTopOffset) * percentage
-            if expecedY <= upperDivide {
-                return estimatedFinalTopOffset
-            } else if (expecedY > upperDivide) && (expecedY <= lowerDivide) {
-                return estimatedInitialTopOffset
+            let upperDividePercentage: CGFloat = 60/100
+            let lowerDividePercentage: CGFloat = 60/100
+            let upperDivide = estimatedFinalTopOffset + (estimatedInitialTopOffset - estimatedFinalTopOffset) * upperDividePercentage
+            let lowerDivide = estimatedInitialTopOffset + (screenTopOffset - estimatedInitialTopOffset) * lowerDividePercentage
+
+            let lowerDividePercentageForDismiss: CGFloat = 20/100
+            let lowerDivideForDismiss = estimatedInitialTopOffset + (screenTopOffset - estimatedInitialTopOffset) * lowerDividePercentageForDismiss
+            let isOnUpperPartOfLowerDevide = (viewOriginY > estimatedFinalTopOffset &&
+                                                viewOriginY < lowerDivideForDismiss)
+            let isComingDown = velocityY > 0
+            if let viewController = presentedViewController as? ResizableContainerViewController, viewController.mode == .fullScreen, isOnUpperPartOfLowerDevide, isComingDown {
+                if expecedY <= upperDivide {
+                    return estimatedFinalTopOffset
+                } else {
+                    return estimatedInitialTopOffset
+                }
             } else {
-                return screenTopOffset
+                if expecedY <= upperDivide {
+                    return estimatedFinalTopOffset
+                } else if (expecedY > upperDivide) && (expecedY <= lowerDivide) {
+                    return estimatedInitialTopOffset
+                } else {
+                    return screenTopOffset
+                }
             }
         @unknown default:
             return nil
@@ -239,9 +254,9 @@ class ResizableControllerObserver: NSObject, UIGestureRecognizerDelegate, UIScro
     
     func settle(value: CGFloat, velocity: CGVector) {
         // Damping(Bounciness) of 0.9 is used for hinting Boundaries, normally 1 is used
-        // Response(period of the spring oscillation) of 0.5 is used for a little stiffer spring that yields a greater amount of force for moving objects
-        let timingParameters = UISpringTimingParameters(dampingRatio: 0.9,
-                                                        frequencyResponse: 0.5,
+        // Response(period of the spring oscillation) of 0.4 is used for a little stiffer spring that yields a greater amount of force for moving objects
+        let timingParameters = UISpringTimingParameters(dampingRatio: 0.95,
+                                                        frequencyResponse: 0.4,
                                                         initialVelocity: velocity)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timingParameters)
 
@@ -291,7 +306,7 @@ extension UISpringTimingParameters {
         precondition(isDampingRatioValid, "Damping Ratio should be in percentage")
         precondition(frequencyResponse > 0, "Frequency Response should be greater than 0")
 
-        let mass: CGFloat = 3
+        let mass: CGFloat = 1
         let stiffness = pow(2 * .pi / frequencyResponse, 2) * mass
         let damping = 4 * .pi * dampingRatio * mass / frequencyResponse
         self.init(mass: mass, stiffness: stiffness, damping: damping, initialVelocity: initialVelocity)
